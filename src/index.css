@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #FF6B6B;
+  --primary-light: #FF9B9B;
+  --primary-dark: #E63E3E;
+  --secondary: #4ECDC4;
+  --secondary-light: #7EDBD5;
+  --secondary-dark: #35A9A2;
+  --accent: #45B7D1;
+  --accent-light: #76CCDF;
+  --accent-dark: #2E97B0;
+  --background: #F7F7F7;
+  --success: #4CAF50;
+  --warning: #FF9800;
+  --error: #F44336;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-gray-900 antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium text-gray-900;
+    line-height: 120%;
+  }
+
+  p {
+    @apply text-gray-700;
+    line-height: 150%;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-dark focus:ring-primary;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white hover:bg-secondary-dark focus:ring-secondary;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-white hover:bg-accent-dark focus:ring-accent;
+  }
+
+  .btn-outline {
+    @apply border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+  }
+
+  .card {
+    @apply rounded-lg bg-white p-6 shadow-md transition-shadow hover:shadow-lg;
+  }
+
+  .form-input {
+    @apply w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-accent focus:ring-1 focus:ring-accent;
+  }
+
+  .form-label {
+    @apply mb-2 block text-sm font-medium text-gray-700;
+  }
+
+  .scheme-card {
+    @apply relative overflow-hidden rounded-lg bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

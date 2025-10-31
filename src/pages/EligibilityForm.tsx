@@ -210,6 +210,7 @@ const EligibilityForm: React.FC = () => {
         id: user?.id || 'temp-id',
         savedSchemes: user?.savedSchemes || [],
         applications: user?.applications || [],
+        email: user?.email || '', // Ensure email is always a string
       };
       
       const recommended = getRecommendedSchemes(tempUser, schemes);

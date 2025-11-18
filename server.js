@@ -6,8 +6,50 @@ import twilio from "twilio";
 import cors from "cors";
 import puppeteer from "puppeteer";
 import * as cheerio from "cheerio";
+import OpenAI from "openai";
 
 const { VoiceResponse } = twilio.twiml;
+
+// Initialize OpenAI (optional)
+let openai = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+} else {
+  console.warn(
+    "OPENAI_API_KEY not set. Voice parsing features will be limited."
+  );
+}
+
+// Session storage for voice call data
+const userSessions = new Map();
+
+// Helper function to get or create user session
+function getUserSession(callSid) {
+  if (!userSessions.has(callSid)) {
+    userSessions.set(callSid, {
+      language: "english",
+      step: "start",
+      data: {
+        age: null,
+        gender: null,
+        income: null,
+        occupation: null,
+        city: null,
+        phoneNumber: null,
+      },
+      eligibleSchemes: [],
+      smsSent: false,
+    });
+  }
+  return userSessions.get(callSid);
+}
+
+// Helper function to clear user session
+function clearUserSession(callSid) {
+  userSessions.delete(callSid);
+}
 
 const app = express();
 app.use(cors()); // Enable CORS for frontend requests
@@ -40,7 +82,8 @@ const mockSchemes = [
     title: "PM Scholarship Scheme",
     category: "students",
     ministry: "Ministry of Education",
-    description: "Scholarships for meritorious students from low-income families to pursue higher education.",
+    description:
+      "Scholarships for meritorious students from low-income families to pursue higher education.",
     eligibilityCriteria: {
       age: { max: 25 },
       income: { max: 800000 },
@@ -73,7 +116,8 @@ const mockSchemes = [
     title: "PM-KISAN",
     category: "farmers",
     ministry: "Ministry of Agriculture & Farmers Welfare",
-    description: "Direct income support to farmer families to supplement their financial needs for agriculture inputs and household expenses.",
+    description:
+      "Direct income support to farmer families to supplement their financial needs for agriculture inputs and household expenses.",
     eligibilityCriteria: {
       category: ["Small and Marginal Farmers"],
       other: ["Cultivable land ownership"],
@@ -103,7 +147,8 @@ const mockSchemes = [
     title: "Ayushman Bharat",
     category: "health",
     ministry: "Ministry of Health and Family Welfare",
-    description: "Health insurance scheme providing financial protection to vulnerable families for secondary and tertiary care hospitalization.",
+    description:
+      "Health insurance scheme providing financial protection to vulnerable families for secondary and tertiary care hospitalization.",
     eligibilityCriteria: {
       income: { max: 500000 },
       other: [
@@ -136,7 +181,8 @@ const mockSchemes = [
     title: "PM Awas Yojana",
     category: "housing",
     ministry: "Ministry of Housing and Urban Affairs",
-    description: "Housing scheme to provide affordable housing to urban poor and economically weaker sections of society.",
+    description:
+      "Housing scheme to provide affordable housing to urban poor and economically weaker sections of society.",
     eligibilityCriteria: {
       income: { max: 300000 },
       other: ["No existing house ownership in family", "First-time home buyer"],
@@ -167,7 +213,8 @@ const mockSchemes = [
     title: "Sukanya Samriddhi Yojana",
     category: "women",
     ministry: "Ministry of Finance",
-    description: "Small savings scheme for girl child to encourage parents to build fund for future education and marriage expenses.",
+    description:
+      "Small savings scheme for girl child to encourage parents to build fund for future education and marriage expenses.",
     eligibilityCriteria: {
       age: { max: 10 },
       gender: ["Female"],
@@ -190,7 +237,8 @@ const mockSchemes = [
       "Submit required documents",
       "Make initial deposit (minimum ₹250)",
     ],
-    applicationLink: "https://www.india.gov.in/spotlight/sukanya-samriddhi-yojana",
+    applicationLink:
+      "https://www.india.gov.in/spotlight/sukanya-samriddhi-yojana",
     lastUpdated: "2023-01-25",
   },
   {
@@ -198,7 +246,8 @@ const mockSchemes = [
     title: "PM Jan Dhan Yojana",
     category: "financial",
     ministry: "Ministry of Finance",
-    description: "Financial inclusion program to ensure access to financial services like banking, insurance, pension in an affordable manner.",
+    description:
+      "Financial inclusion program to ensure access to financial services like banking, insurance, pension in an affordable manner.",
     eligibilityCriteria: {
       age: { min: 10 },
       other: ["No existing bank account", "Indian resident"],
@@ -229,7 +278,8 @@ const mockSchemes = [
     title: "AICTE Pragati Scholarship",
     category: "students",
     ministry: "Ministry of Education",
-    description: "Scholarship scheme for girl students pursuing technical education to encourage female participation in technical fields.",
+    description:
+      "Scholarship scheme for girl students pursuing technical education to encourage female participation in technical fields.",
     eligibilityCriteria: {
       gender: ["Female"],
       education: ["Engineering", "Technical Diploma"],
@@ -262,7 +312,8 @@ const mockSchemes = [
     title: "National Means-cum-Merit Scholarship",
     category: "students",
     ministry: "Ministry of Education",
-    description: "Scholarship for meritorious students from economically weaker sections to reduce dropout rate in class VIII.",
+    description:
+      "Scholarship for meritorious students from economically weaker sections to reduce dropout rate in class VIII.",
     eligibilityCriteria: {
       education: ["Class VIII"],
       income: { max: 150000 },
@@ -294,7 +345,8 @@ const mockSchemes = [
     title: "PM Mudra Yojana",
     category: "financial",
     ministry: "Ministry of Finance",
-    description: "Financial support for micro enterprises to help them grow their businesses.",
+    description:
+      "Financial support for micro enterprises to help them grow their businesses.",
     eligibilityCriteria: {
       age: { min: 18 },
       other: ["Must be a micro enterprise", "Business plan required"],
@@ -326,7 +378,8 @@ const mockSchemes = [
     title: "Atal Pension Yojana",
     category: "financial",
     ministry: "Ministry of Finance",
-    description: "Pension scheme for workers in unorganized sector ensuring monthly pension after 60 years of age.",
+    description:
+      "Pension scheme for workers in unorganized sector ensuring monthly pension after 60 years of age.",
     eligibilityCriteria: {
       age: { min: 18, max: 40 },
       other: [
@@ -360,7 +413,8 @@ const mockSchemes = [
     title: "National Social Assistance Programme (NSAP)",
     category: "senior-citizens",
     ministry: "Ministry of Rural Development",
-    description: "Provides financial assistance to elderly citizens who are below poverty line and have no means of subsistence.",
+    description:
+      "Provides financial assistance to elderly citizens who are below poverty line and have no means of subsistence.",
     eligibilityCriteria: {
       age: { min: 60 },
       income: { max: 150000 },
@@ -392,7 +446,8 @@ const mockSchemes = [
     title: "Senior Citizen Health Insurance Scheme",
     category: "senior-citizens",
     ministry: "Ministry of Health and Family Welfare",
-    description: "Health insurance scheme specifically designed for senior citizens providing comprehensive medical coverage.",
+    description:
+      "Health insurance scheme specifically designed for senior citizens providing comprehensive medical coverage.",
     eligibilityCriteria: {
       age: { min: 60 },
       other: ["Indian citizen", "No existing comprehensive health insurance"],
@@ -417,7 +472,8 @@ const mockSchemes = [
       "Undergo medical examination if required",
       "Pay premium and receive policy",
     ],
-    applicationLink: "https://www.india.gov.in/spotlight/senior-citizen-health-insurance-scheme",
+    applicationLink:
+      "https://www.india.gov.in/spotlight/senior-citizen-health-insurance-scheme",
     lastUpdated: "2023-08-15",
   },
   {
@@ -425,7 +481,8 @@ const mockSchemes = [
     title: "Indira Gandhi National Old Age Pension Scheme",
     category: "senior-citizens",
     ministry: "Ministry of Rural Development",
-    description: "Pension scheme for elderly citizens providing monthly financial assistance to improve their quality of life.",
+    description:
+      "Pension scheme for elderly citizens providing monthly financial assistance to improve their quality of life.",
     eligibilityCriteria: {
       age: { min: 60 },
       income: { max: 200000 },
@@ -458,9 +515,10 @@ const mockSchemes = [
 // Helper function to find scheme by name (case-insensitive partial match)
 function findSchemeByName(speechInput) {
   const input = speechInput.toLowerCase().trim();
-  return mockSchemes.find(scheme =>
-    scheme.title.toLowerCase().includes(input) ||
-    input.includes(scheme.title.toLowerCase())
+  return mockSchemes.find(
+    (scheme) =>
+      scheme.title.toLowerCase().includes(input) ||
+      input.includes(scheme.title.toLowerCase())
   );
 }
 
@@ -480,10 +538,16 @@ function formatSchemeDetails(scheme) {
       details += `Maximum age ${scheme.eligibilityCriteria.age.max} years. `;
     }
   }
-  if (scheme.eligibilityCriteria.income && scheme.eligibilityCriteria.income.max) {
+  if (
+    scheme.eligibilityCriteria.income &&
+    scheme.eligibilityCriteria.income.max
+  ) {
     details += `Maximum income ₹${scheme.eligibilityCriteria.income.max}. `;
   }
-  if (scheme.eligibilityCriteria.other && scheme.eligibilityCriteria.other.length > 0) {
+  if (
+    scheme.eligibilityCriteria.other &&
+    scheme.eligibilityCriteria.other.length > 0
+  ) {
     details += scheme.eligibilityCriteria.other.join(". ") + ". ";
   }
 
@@ -491,30 +555,444 @@ function formatSchemeDetails(scheme) {
   details += "Benefits: " + scheme.benefits.join(". ") + ". ";
 
   // Documents
-  details += "Required documents: " + scheme.requiredDocuments.join(", ") + ". ";
+  details +=
+    "Required documents: " + scheme.requiredDocuments.join(", ") + ". ";
 
   // Application process
-  details += "Application process: " + scheme.applicationProcess.join(". ") + ". ";
+  details +=
+    "Application process: " + scheme.applicationProcess.join(". ") + ". ";
 
   return details;
 }
 
-// Initial voice greeting
+// Eligibility checker function
+function eligibilityChecker(userData, schemes) {
+  const eligibleSchemes = [];
+
+  schemes.forEach((scheme) => {
+    let isEligible = true;
+    const criteria = scheme.eligibilityCriteria;
+
+    // Check age
+    if (userData.age && criteria.age) {
+      if (criteria.age.min && userData.age < criteria.age.min) {
+        isEligible = false;
+      }
+      if (criteria.age.max && userData.age > criteria.age.max) {
+        isEligible = false;
+      }
+    }
+
+    // Check gender
+    if (userData.gender && criteria.gender && criteria.gender.length > 0) {
+      if (!criteria.gender.includes(userData.gender)) {
+        isEligible = false;
+      }
+    }
+
+    // Check income
+    if (userData.income && criteria.income && criteria.income.max) {
+      if (userData.income > criteria.income.max) {
+        isEligible = false;
+      }
+    }
+
+    // Check category (occupation can be mapped to category)
+    if (
+      userData.occupation &&
+      criteria.category &&
+      criteria.category.length > 0
+    ) {
+      const occupationLower = userData.occupation.toLowerCase();
+      const categoryMatch = criteria.category.some(
+        (cat) =>
+          occupationLower.includes(cat.toLowerCase()) ||
+          cat.toLowerCase().includes(occupationLower)
+      );
+      if (!categoryMatch) {
+        isEligible = false;
+      }
+    }
+
+    // Check education (if provided in user data)
+    if (
+      userData.education &&
+      criteria.education &&
+      criteria.education.length > 0
+    ) {
+      if (!criteria.education.includes(userData.education)) {
+        isEligible = false;
+      }
+    }
+
+    // For schemes without strict criteria, consider them eligible if basic checks pass
+    if (isEligible) {
+      eligibleSchemes.push(scheme);
+    }
+  });
+
+  return eligibleSchemes;
+}
+
+// Multi-language support
+const languagePrompts = {
+  english: {
+    welcome:
+      "Welcome to Government Scheme Eligibility Service. Press 1 for English, 2 for Hindi, 3 for Marathi.",
+    age: "Please state your age.",
+    gender: "Please state your gender. Say male or female.",
+    income: "Please state your annual income in rupees.",
+    occupation: "Please state your occupation.",
+    city: "Please state your city.",
+    processing: "Processing your eligibility. Please wait.",
+    noSchemes:
+      "Sorry, no schemes match your criteria. You can call back later.",
+    smsSent: "An SMS with scheme details has been sent to your number.",
+    error: "Sorry, there was an error. Please try again.",
+    goodbye: "Thank you for using our service. Goodbye.",
+  },
+  hindi: {
+    welcome:
+      "सरकारी योजना पात्रता सेवा में आपका स्वागत है। अंग्रेजी के लिए 1, हिंदी के लिए 2, मराठी के लिए 3 दबाएं।",
+    age: "कृपया अपनी उम्र बताएं।",
+    gender: "कृपया अपना लिंग बताएं। पुरुष या महिला कहें।",
+    income: "कृपया अपनी वार्षिक आय रुपये में बताएं।",
+    occupation: "कृपया अपना व्यवसाय बताएं।",
+    city: "कृपया अपना शहर बताएं।",
+    processing: "आपकी पात्रता की जांच हो रही है। कृपया प्रतीक्षा करें।",
+    noSchemes:
+      "क्षमा करें, कोई योजना आपके मानदंडों से मेल नहीं खाती। आप बाद में कॉल कर सकते हैं।",
+    smsSent: "योजना विवरण वाला एसएमएस आपके नंबर पर भेज दिया गया है।",
+    error: "क्षमा करें, कोई त्रुटि हुई। कृपया पुनः प्रयास करें।",
+    goodbye: "हमारी सेवा का उपयोग करने के लिए धन्यवाद। अलविदा।",
+  },
+  marathi: {
+    welcome:
+      "सरकारी योजना पात्रता सेवेत आपले स्वागत आहे. इंग्रजीसाठी 1, हिंदीसाठी 2, मराठीसाठी 3 दाबा.",
+    age: "कृपया आपली वय सांगा.",
+    gender: "कृपया आपले लिंग सांगा. पुरुष किंवा स्त्री सांगा.",
+    income: "कृपया आपली वार्षिक उत्पन्न रुपये मध्ये सांगा.",
+    occupation: "कृपया आपला व्यवसाय सांगा.",
+    city: "कृपया आपले शहर सांगा.",
+    processing: "आपल्या पात्रतेची तपासणी सुरू आहे. कृपया थांबा.",
+    noSchemes:
+      "क्षमस्व, कोणतीही योजना आपल्या निकषांशी जुळत नाही. आपण नंतर कॉल करू शकता.",
+    smsSent: "योजना तपशील असलेला एसएमएस आपल्या नंबरवर पाठविला गेला आहे.",
+    error: "क्षमस्व, त्रुटी झाली. कृपया पुन्हा प्रयत्न करा.",
+    goodbye: "आमच्या सेवेचा वापर केल्याबद्दल धन्यवाद. अलविदा.",
+  },
+};
+
+// Initial voice greeting for eligibility check
 app.post("/voice", (req, res) => {
   const twiml = new VoiceResponse();
 
   const gather = twiml.gather({
-    input: "speech",
-    action: "/process-scheme-request",
+    input: "speech dtmf",
+    action: "/voice/start",
     method: "POST",
+    numDigits: 1,
   });
 
   gather.say(
-    "Welcome to the Government Scheme Information Service. " +
-    "Say 'list schemes' to hear all available schemes, " +
-    "or say the name of a specific scheme to get detailed information. " +
-    "For example, say 'PM Kisan' or 'Ayushman Bharat'."
+    "Welcome to Government Scheme Eligibility Service. Press 1 for English, 2 for Hindi, 3 for Marathi."
   );
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Language selection and start eligibility check
+app.post("/voice/start", (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const input = req.body.Digits || req.body.SpeechResult || "";
+
+  let language = "english";
+  if (input === "2") language = "hindi";
+  else if (input === "3") language = "marathi";
+
+  // Initialize session
+  const session = getUserSession(callSid);
+  session.language = language;
+  session.step = "age";
+
+  const gather = twiml.gather({
+    input: "speech",
+    action: "/voice/collect-age",
+    method: "POST",
+  });
+
+  gather.say(languagePrompts[language].age);
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Collect age
+app.post("/voice/collect-age", (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const speechInput = req.body.SpeechResult || "";
+  const session = getUserSession(callSid);
+
+  // Use OpenAI to parse age from speech
+  try {
+    const age = parseInt(speechInput.replace(/\D/g, ""));
+    if (age && age > 0 && age < 120) {
+      session.data.age = age;
+      session.step = "gender";
+
+      const gather = twiml.gather({
+        input: "speech",
+        action: "/voice/collect-gender",
+        method: "POST",
+      });
+
+      gather.say(languagePrompts[session.language].gender);
+    } else {
+      // Retry age collection
+      const gather = twiml.gather({
+        input: "speech",
+        action: "/voice/collect-age",
+        method: "POST",
+      });
+
+      gather.say(languagePrompts[session.language].age);
+    }
+  } catch (error) {
+    console.error("Error parsing age:", error);
+    const gather = twiml.gather({
+      input: "speech",
+      action: "/voice/collect-age",
+      method: "POST",
+    });
+
+    gather.say(languagePrompts[session.language].age);
+  }
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Collect gender
+app.post("/voice/collect-gender", (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const speechInput = req.body.SpeechResult || "";
+  const session = getUserSession(callSid);
+
+  const input = speechInput.toLowerCase();
+  let gender = null;
+
+  if (
+    input.includes("male") ||
+    input.includes("पुरुष") ||
+    input.includes("पुरुष")
+  ) {
+    gender = "male";
+  } else if (
+    input.includes("female") ||
+    input.includes("महिला") ||
+    input.includes("स्त्री")
+  ) {
+    gender = "female";
+  }
+
+  if (gender) {
+    session.data.gender = gender;
+    session.step = "income";
+
+    const gather = twiml.gather({
+      input: "speech",
+      action: "/voice/collect-income",
+      method: "POST",
+    });
+
+    gather.say(languagePrompts[session.language].income);
+  } else {
+    // Retry gender collection
+    const gather = twiml.gather({
+      input: "speech",
+      action: "/voice/collect-gender",
+      method: "POST",
+    });
+
+    gather.say(languagePrompts[session.language].gender);
+  }
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Collect income
+app.post("/voice/collect-income", (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const speechInput = req.body.SpeechResult || "";
+  const session = getUserSession(callSid);
+
+  // Parse income from speech
+  try {
+    const income = parseInt(speechInput.replace(/\D/g, ""));
+    if (income && income >= 0) {
+      session.data.income = income;
+      session.step = "occupation";
+
+      const gather = twiml.gather({
+        input: "speech",
+        action: "/voice/collect-occupation",
+        method: "POST",
+      });
+
+      gather.say(languagePrompts[session.language].occupation);
+    } else {
+      // Retry income collection
+      const gather = twiml.gather({
+        input: "speech",
+        action: "/voice/collect-income",
+        method: "POST",
+      });
+
+      gather.say(languagePrompts[session.language].income);
+    }
+  } catch (error) {
+    console.error("Error parsing income:", error);
+    const gather = twiml.gather({
+      input: "speech",
+      action: "/voice/collect-income",
+      method: "POST",
+    });
+
+    gather.say(languagePrompts[session.language].income);
+  }
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Collect occupation
+app.post("/voice/collect-occupation", (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const speechInput = req.body.SpeechResult || "";
+  const session = getUserSession(callSid);
+
+  if (speechInput.trim()) {
+    session.data.occupation = speechInput.trim();
+    session.step = "city";
+
+    const gather = twiml.gather({
+      input: "speech",
+      action: "/voice/collect-city",
+      method: "POST",
+    });
+
+    gather.say(languagePrompts[session.language].city);
+  } else {
+    // Retry occupation collection
+    const gather = twiml.gather({
+      input: "speech",
+      action: "/voice/collect-occupation",
+      method: "POST",
+    });
+
+    gather.say(languagePrompts[session.language].occupation);
+  }
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Collect city
+app.post("/voice/collect-city", (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const speechInput = req.body.SpeechResult || "";
+  const session = getUserSession(callSid);
+
+  if (speechInput.trim()) {
+    session.data.city = speechInput.trim();
+    session.step = "processing";
+
+    // Start processing
+    twiml.say(languagePrompts[session.language].processing);
+
+    // Redirect to parse data
+    twiml.redirect("/voice/parse-data");
+  } else {
+    // Retry city collection
+    const gather = twiml.gather({
+      input: "speech",
+      action: "/voice/collect-city",
+      method: "POST",
+    });
+
+    gather.say(languagePrompts[session.language].city);
+  }
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Parse data and check eligibility
+app.post("/voice/parse-data", async (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const session = getUserSession(callSid);
+
+  try {
+    // Check eligibility
+    const eligibleSchemes = eligibilityChecker(session.data, mockSchemes);
+    session.eligibleSchemes = eligibleSchemes;
+
+    if (eligibleSchemes.length > 0) {
+      // Send SMS with scheme details
+      // Note: SMS sending logic would go here
+
+      // Redirect to results
+      twiml.redirect("/voice/result");
+    } else {
+      twiml.say(languagePrompts[session.language].noSchemes);
+      twiml.say(languagePrompts[session.language].goodbye);
+    }
+  } catch (error) {
+    console.error("Error in eligibility check:", error);
+    twiml.say(languagePrompts[session.language].error);
+    twiml.say(languagePrompts[session.language].goodbye);
+  }
+
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+// Speak results and send SMS
+app.post("/voice/result", (req, res) => {
+  const twiml = new VoiceResponse();
+  const callSid = req.body.CallSid;
+  const session = getUserSession(callSid);
+
+  const eligibleSchemes = session.eligibleSchemes || [];
+
+  if (eligibleSchemes.length > 0) {
+    let message = `You are eligible for ${eligibleSchemes.length} schemes: `;
+
+    eligibleSchemes.slice(0, 3).forEach((scheme, index) => {
+      message += `${index + 1}. ${scheme.title}. `;
+    });
+
+    if (eligibleSchemes.length > 3) {
+      message += `And ${eligibleSchemes.length - 3} more schemes. `;
+    }
+
+    twiml.say(message);
+    twiml.say(languagePrompts[session.language].smsSent);
+  }
+
+  twiml.say(languagePrompts[session.language].goodbye);
+
+  // Clear session
+  clearUserSession(callSid);
 
   res.type("text/xml");
   res.send(twiml.toString());
@@ -535,7 +1013,8 @@ app.post("/process-scheme-request", (req, res) => {
       message += `${index + 1}. ${scheme.title}. `;
     });
 
-    message += "Say the name of any scheme to get detailed information, or say 'main menu' to go back.";
+    message +=
+      "Say the name of any scheme to get detailed information, or say 'main menu' to go back.";
 
     const gather = twiml.gather({
       input: "speech",
@@ -554,8 +1033,8 @@ app.post("/process-scheme-request", (req, res) => {
 
     gather.say(
       "Welcome back to the Government Scheme Information Service. " +
-      "Say 'list schemes' to hear all available schemes, " +
-      "or say the name of a specific scheme to get detailed information."
+        "Say 'list schemes' to hear all available schemes, " +
+        "or say the name of a specific scheme to get detailed information."
     );
   } else {
     // Try to find specific scheme
@@ -570,7 +1049,9 @@ app.post("/process-scheme-request", (req, res) => {
         method: "POST",
       });
 
-      gather.say(details + " Say 'main menu' to go back, or ask about another scheme.");
+      gather.say(
+        details + " Say 'main menu' to go back, or ask about another scheme."
+      );
     } else {
       // Scheme not found
       const gather = twiml.gather({
@@ -581,8 +1062,8 @@ app.post("/process-scheme-request", (req, res) => {
 
       gather.say(
         "Sorry, I couldn't find that scheme. " +
-        "Say 'list schemes' to hear all available schemes, " +
-        "or try saying a different scheme name."
+          "Say 'list schemes' to hear all available schemes, " +
+          "or try saying a different scheme name."
       );
     }
   }

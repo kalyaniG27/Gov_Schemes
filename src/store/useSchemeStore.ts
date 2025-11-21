@@ -10,7 +10,7 @@ interface SchemeState {
   fetchSchemes: () => Promise<void>;
   getSchemeById: (id: string) => Promise<Scheme | null>;
   filterSchemes: (
-    category?: SchemeCategory,
+    category?: SchemeCategory | null,
     query?: string,
     filters?: Partial<Record<string, any>>
   ) => void;

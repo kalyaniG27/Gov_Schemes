@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+
 import { motion } from 'framer-motion';
+import useLanguage from '../hooks/useLanguage';
 import { 
   User, 
   FileText, 
   BookmarkCheck, 
   LogIn, 
-  UserPlus,
   Bell
 } from 'lucide-react';
 
@@ -19,26 +20,27 @@ import useSchemeStore from '../store/useSchemeStore';
 const Dashboard: React.FC = () => {
   const { isAuthenticated, user, login } = useUserStore();
   const { schemes, fetchSchemes } = useSchemeStore();
+  const { translate: t } = useLanguage();
   
   const [activeTab, setActiveTab] = useState('profile');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
   const [savedSchemes, setSavedSchemes] = useState<any[]>([]);
-  
+
   useEffect(() => {
     fetchSchemes();
   }, [fetchSchemes]);
-  
+
   useEffect(() => {
     if (user && schemes.length > 0) {
-      const userSavedSchemes = schemes.filter(scheme => 
+      const userSavedSchemes = schemes.filter(scheme =>
         user.savedSchemes.includes(scheme.id)
       );
       setSavedSchemes(userSavedSchemes);
     }
   }, [user, schemes]);
-  
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     login(email, password);
@@ -66,15 +68,15 @@ const Dashboard: React.FC = () => {
               transition={{ duration: 0.3 }}
             >
               <div className="bg-primary text-white p-6 text-center">
-                <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
-                <p className="text-white/80">Login to access your dashboard</p>
+                <h1 className="text-2xl font-bold mb-2">{t('dashboard.welcomeBack')}</h1>
+                <p className="text-white/80">{t('dashboard.loginToAccess')}</p>
               </div>
               
               <div className="p-6">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address
+                      {t('dashboard.emailAddress')}
                     </label>
                     <input
                       id="email"
@@ -86,10 +88,10 @@ const Dashboard: React.FC = () => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
+                      {t('dashboard.password')}
                     </label>
                     <input
                       id="password"
@@ -101,7 +103,7 @@ const Dashboard: React.FC = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <input
@@ -110,40 +112,40 @@ const Dashboard: React.FC = () => {
                         className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                       />
                       <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                        Remember me
+                        {t('dashboard.rememberMe')}
                       </label>
                     </div>
-                    
+
                     <div className="text-sm">
                       <a href="#" className="text-primary hover:text-primary-dark">
-                        Forgot password?
+                        {t('dashboard.forgotPassword')}
                       </a>
                     </div>
                   </div>
-                  
+
                   <button
                     type="submit"
                     className="btn btn-primary w-full flex items-center justify-center"
                   >
                     <LogIn size={18} className="mr-2" />
-                    Login
+                    {t('login')}
                   </button>
                 </form>
-                
+
                 <div className="mt-4">
                   <button
                     onClick={handleDemoLogin}
                     className="btn btn-outline w-full"
                   >
-                    Try Demo Account
+                    {t('dashboard.tryDemo')}
                   </button>
                 </div>
-                
+
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
+                    {t('dashboard.noAccount')}{' '}
                     <a href="#" className="text-primary font-medium">
-                      Sign up
+                      {t('dashboard.signUp')}
                     </a>
                   </p>
                 </div>
@@ -164,7 +166,7 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-3xl font-bold">Your Dashboard</h1>
+          <h1 className="text-3xl font-bold">{t('dashboard')}</h1>
         </motion.div>
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -195,7 +197,7 @@ const Dashboard: React.FC = () => {
                       }`}
                     >
                       <User size={18} className="mr-3" />
-                      Profile
+                      {t('dashboard.profile')}
                     </button>
                   </li>
                   <li>
@@ -208,7 +210,7 @@ const Dashboard: React.FC = () => {
                       }`}
                     >
                       <FileText size={18} className="mr-3" />
-                      Applications
+                      {t('dashboard.applications')}
                     </button>
                   </li>
                   <li>
@@ -221,7 +223,7 @@ const Dashboard: React.FC = () => {
                       }`}
                     >
                       <BookmarkCheck size={18} className="mr-3" />
-                      Saved Schemes
+                      {t('dashboard.savedSchemes')}
                     </button>
                   </li>
                   <li>
@@ -234,7 +236,7 @@ const Dashboard: React.FC = () => {
                       }`}
                     >
                       <FileText size={18} className="mr-3" />
-                      Documents
+                      {t('dashboard.documents')}
                     </button>
                   </li>
                 </ul>
@@ -254,50 +256,50 @@ const Dashboard: React.FC = () => {
               {activeTab === 'profile' && (
                 <div>
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold">Personal Profile</h2>
-                    <button className="btn btn-outline">Edit Profile</button>
+                    <h2 className="text-xl font-semibold">{t('dashboard.personalProfile')}</h2>
+                    <button className="btn btn-outline">{t('dashboard.editProfile')}</button>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">Personal Information</h3>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.personalInformation')}</h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-xs text-gray-500">Full Name</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.fullName')}</label>
                           <div className="font-medium">{user?.name}</div>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500">Age</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.age')}</label>
                           <div className="font-medium">{user?.age} years</div>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500">Gender</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.gender')}</label>
                           <div className="font-medium">{user?.gender}</div>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500">Location</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.location')}</label>
                           <div className="font-medium">{user?.location}</div>
                         </div>
                       </div>
                     </div>
                     
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">Additional Information</h3>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.additionalInformation')}</h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-xs text-gray-500">Category</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.category')}</label>
                           <div className="font-medium">{user?.category}</div>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500">Annual Income</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.annualIncome')}</label>
                           <div className="font-medium">₹{user?.income.toLocaleString()}</div>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500">Education</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.education')}</label>
                           <div className="font-medium">{user?.education}</div>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500">Employment Status</label>
+                          <label className="block text-xs text-gray-500">{t('dashboard.employmentStatus')}</label>
                           <div className="font-medium">{user?.employmentStatus}</div>
                         </div>
                       </div>
@@ -305,7 +307,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   
                   <div className="mt-8 pt-6 border-t">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Government ID</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.governmentId')}</h3>
                     <div>
                       <label className="block text-xs text-gray-500">Aadhaar Number</label>
                       <div className="font-medium">{user?.aadhaarNumber}</div>
@@ -313,20 +315,20 @@ const Dashboard: React.FC = () => {
                   </div>
                   
                   <div className="mt-8 pt-6 border-t">
-                    <h3 className="text-lg font-medium mb-4">Recommended Schemes</h3>
+                    <h3 className="text-lg font-medium mb-4">{t('dashboard.recommendedSchemes')}</h3>
                     <p className="text-sm text-gray-600 mb-4">
-                      Based on your profile, we've found these schemes you might be eligible for:
+                      {t('dashboard.recommendedSchemesDescription')}
                     </p>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {schemes.slice(0, 2).map(scheme => (
                         <SchemeCard key={scheme.id} scheme={scheme} user={user} />
                       ))}
                     </div>
-                    
+
                     <div className="mt-4 text-center">
                       <Link to="/schemes" className="btn btn-outline btn-sm">
-                        Explore All Schemes
+                        {t('dashboard.exploreAllSchemes')}
                       </Link>
                     </div>
                   </div>
@@ -336,9 +338,9 @@ const Dashboard: React.FC = () => {
               {activeTab === 'applications' && (
                 <div>
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold">Your Applications</h2>
+                    <h2 className="text-xl font-semibold">{t('dashboard.yourApplications')}</h2>
                     <Link to="/eligibility" className="btn btn-primary">
-                      New Application
+                      {t('dashboard.newApplication')}
                     </Link>
                   </div>
                   
@@ -351,12 +353,12 @@ const Dashboard: React.FC = () => {
                   ) : (
                     <div className="text-center py-12 bg-gray-50 rounded-lg">
                       <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">No Applications Yet</h3>
+                      <h3 className="text-lg font-medium text-gray-700 mb-2">{t('dashboard.noApplicationsYet')}</h3>
                       <p className="text-gray-500 mb-6">
-                        You haven't applied for any schemes yet. Start by checking your eligibility.
+                        {t('dashboard.noApplicationsDescription')}
                       </p>
                       <Link to="/eligibility" className="btn btn-primary">
-                        Check Eligibility
+                        {t('checkEligibility')}
                       </Link>
                     </div>
                   )}
@@ -366,9 +368,9 @@ const Dashboard: React.FC = () => {
               {activeTab === 'saved' && (
                 <div>
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold">Saved Schemes</h2>
+                    <h2 className="text-xl font-semibold">{t('dashboard.savedSchemes')}</h2>
                     <Link to="/schemes" className="btn btn-outline">
-                      Browse More
+                      {t('dashboard.browseMore')}
                     </Link>
                   </div>
                   
@@ -381,12 +383,12 @@ const Dashboard: React.FC = () => {
                   ) : (
                     <div className="text-center py-12 bg-gray-50 rounded-lg">
                       <BookmarkCheck size={48} className="mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">No Saved Schemes</h3>
+                      <h3 className="text-lg font-medium text-gray-700 mb-2">{t('dashboard.noSavedSchemes')}</h3>
                       <p className="text-gray-500 mb-6">
-                        You haven't saved any schemes yet. Browse schemes and save the ones you're interested in.
+                        {t('dashboard.noSavedSchemesDescription')}
                       </p>
                       <Link to="/schemes" className="btn btn-primary">
-                        Explore Schemes
+                        {t('exploreSchemes')}
                       </Link>
                     </div>
                   )}
@@ -396,11 +398,11 @@ const Dashboard: React.FC = () => {
               {activeTab === 'documents' && (
                 <div>
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold">Document Management</h2>
+                    <h2 className="text-xl font-semibold">{t('dashboard.documentManagement')}</h2>
                   </div>
-                  
+
                   <p className="text-gray-600 mb-6">
-                    Upload and manage your documents for faster application processing. These documents will be securely stored and can be used across multiple scheme applications.
+                    {t('dashboard.documentManagementDescription')}
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
@@ -445,9 +447,9 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-start">
                       <Bell size={20} className="text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
                       <div>
-                        <h4 className="font-medium text-blue-800 mb-1">Document Verification Status</h4>
+                          <h4 className="font-medium text-blue-800 mb-1">{t('dashboard.documentVerificationStatus')}</h4>
                         <p className="text-sm text-blue-600">
-                          Your Aadhaar Card has been verified. PAN Card verification is in progress. Average verification time is 24-48 hours.
+                            {t('dashboard.documentVerificationDescription')}
                         </p>
                       </div>
                     </div>

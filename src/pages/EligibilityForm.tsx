@@ -10,6 +10,7 @@ import useUserStore from '../store/useUserStore';
 import useSchemeStore from '../store/useSchemeStore';
 import useSpeechRecognition from '../hooks/useSpeechRecognition';
 import { getRecommendedSchemes } from '../utils/eligibilityChecker';
+import useLanguage from '../hooks/useLanguage';
 
 interface FormData {
   name: string;
@@ -26,6 +27,7 @@ interface FormData {
 const EligibilityForm: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateProfile, register: registerUser } = useUserStore();
+  const { translate: t } = useLanguage();
   const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<FormData>({
     defaultValues: {
       name: user?.name || '',
@@ -56,29 +58,35 @@ const EligibilityForm: React.FC = () => {
     browserSupportsSpeechRecognition 
   } = useSpeechRecognition();
   
-  const steps = ['Personal Information', 'Demographics', 'Employment', 'Government ID', 'Results'];
+  const steps = [
+    t('eligibility.step1'),
+    t('eligibility.step2'),
+    t('eligibility.step3'),
+    t('eligibility.step4'),
+    t('eligibility.step5')
+  ];
 
   const registerOptions = {
-    name: { required: 'Name is required' },
-    age: { 
-      required: 'Age is required',
-      min: { value: 0, message: 'Age must be positive' },
-      max: { value: 120, message: 'Age cannot exceed 120' }
+    name: { required: t('validation.nameRequired') },
+    age: {
+      required: t('validation.ageRequired'),
+      min: { value: 0, message: t('validation.agePositive') },
+      max: { value: 120, message: t('validation.ageMax') }
     },
-    gender: { required: 'Gender is required' },
-    location: { required: 'Location is required' },
-    category: { required: 'Category is required' },
-    income: { 
-      required: 'Income is required',
-      min: { value: 0, message: 'Income cannot be negative' }
+    gender: { required: t('validation.genderRequired') },
+    location: { required: t('validation.locationRequired') },
+    category: { required: t('validation.categoryRequired') },
+    income: {
+      required: t('validation.incomeRequired'),
+      min: { value: 0, message: t('validation.incomePositive') }
     },
-    education: { required: 'Education is required' },
-    employmentStatus: { required: 'Employment status is required' },
+    education: { required: t('validation.educationRequired') },
+    employmentStatus: { required: t('validation.employmentRequired') },
     aadhaarNumber: {
-      required: 'Aadhaar number is required',
+      required: t('validation.aadhaarRequired'),
       pattern: {
         value: /^[0-9X]{4}-[0-9X]{4}-[0-9X]{4}$/,
-        message: 'Enter a valid Aadhaar format (XXXX-XXXX-XXXX)'
+        message: t('validation.aadhaarFormat')
       }
     }
   };
@@ -239,9 +247,9 @@ const EligibilityForm: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h1 className="text-3xl font-bold mb-4">Check Your Eligibility</h1>
+            <h1 className="text-3xl font-bold mb-4">{t('eligibility.title')}</h1>
             <p className="text-gray-600">
-              Complete the form below to find government schemes you are eligible for.
+              {t('eligibility.subtitle')}
             </p>
           </motion.div>
           
@@ -264,7 +272,7 @@ const EligibilityForm: React.FC = () => {
                     exit="exit"
                     className="space-y-6"
                   >
-                    <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
+                    <h2 className="text-xl font-semibold mb-6">{t('eligibility.step1')}</h2>
                     
                     <div>
                       <label htmlFor="name" className="form-label">

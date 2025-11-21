@@ -14,13 +14,15 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute';
 import VoiceCallButton from './components/VoiceCallButton.tsx';
+import { LanguageProvider } from './hooks/useLanguage';
 
 function App() {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen bg-neutral-50">
-        <Header />
-        <main className="flex-grow">
+      <LanguageProvider>
+        <div className="flex flex-col min-h-screen bg-neutral-50">
+          <Header />
+          <main className="flex-grow">
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={<LandingPage />} />
@@ -43,6 +45,7 @@ function App() {
         {/* This will add the floating call button to all pages */}
         <VoiceCallButton />
       </div>
+      </LanguageProvider>
     </Router>
   );
 }

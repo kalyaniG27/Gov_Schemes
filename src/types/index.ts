@@ -73,7 +73,7 @@ export type SchemeCategory =
   | 'housing'
   | 'financial';
 
-export type Language = 'en' | 'hi' | 'ta' | 'bn' | 'mr';
+export type Language = 'en' | 'hi' | 'bn' | 'mr' | 'te' | 'ta';
 
 export interface LanguageOption {
   code: Language;

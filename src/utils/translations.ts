@@ -1,8 +1,38 @@
 import { Language } from '../types';
 
 export const loadTranslations = async (language: Language): Promise<Record<string, string>> => {
+  // Try to load JSON from public locales first (if available).
+  try {
+    const resp = await fetch(`/locales/${language}/translation.json`);
+    if (resp.ok) {
+      const json = await resp.json();
+      // Map some common keys from public JSON to the keys used across the app
+      const aliases: Record<string, string> = {
+        home: 'nav.home',
+        exploreSchemes: 'nav.schemes',
+        checkEligibility: 'nav.eligibility',
+        // public JSON uses "admin" while app expects "admin.title"
+        admin: 'admin.title',
+        adminPanel: 'admin.panel.title',
+        adminLogin: 'nav.login',
+        login: 'nav.login',
+        register: 'nav.register',
+        logout: 'nav.logout',
+        dashboard: 'nav.dashboard',
+      };
+      Object.entries(aliases).forEach(([src, dest]) => {
+        if ((json as any)[src] && !(json as any)[dest]) {
+          (json as any)[dest] = (json as any)[src];
+        }
+      });
+      return json;
+    }
+  } catch (e) {
+    // ignore fetch errors and fall back to in-memory translations
+  }
+
   await new Promise(resolve => setTimeout(resolve, 100));
-  
+
   const translations = {
     en: {
       // Common
@@ -21,6 +51,20 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'nav.saved': 'Saved Schemes',
       'nav.documents': 'Documents',
       'nav.logout': 'Logout',
+      'admin.title': 'Admin',
+      // Admin Panel
+      'admin.panel.title': 'Admin Panel',
+      'admin.panel.subtitle': 'Manage government schemes and monitor performance',
+      'admin.loggedInAs': 'Logged in as:',
+      'admin.stats.totalSchemes': 'Total Schemes',
+      'admin.stats.recent': 'Recent (7 days)',
+      'admin.stats.totalViews': 'Total Views',
+      'admin.stats.avgViews': 'Avg. Views',
+      'admin.search.placeholder': 'Search schemes...',
+      'admin.addNew': 'Add New Scheme',
+      'admin.logout': 'Logout',
+      'admin.filter.allTypes': 'All Types',
+      'admin.filter.allCategories': 'All Categories',
       
       // Landing Page
       'landing.hero.title': 'One Nation, One Platform for All Government Schemes',
@@ -146,6 +190,11 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'form.employment.unemployed': 'Unemployed',
       'form.employment.student': 'Student',
       'form.aadhaar': 'Aadhaar Number',
+      'form.location.select': 'Select state',
+      'form.category.select': 'Select category',
+      'form.education.select': 'Select education',
+      'form.employment.select': 'Select status',
+      'form.gender.select': 'Select gender',
       'form.required': 'Required',
       'form.optional': 'Optional',
       'form.next': 'Next',
@@ -187,8 +236,50 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'application.action.continue': 'Continue Application',
       'application.action.track': 'Track Status',
       'application.action.view': 'View Details',
-      'application.action.benefits': 'View Benefits'
-    },
+    'application.action.benefits': 'View Benefits',
+    // Dashboard
+    'dashboard': 'Dashboard',
+    'dashboard.welcomeBack': 'Welcome Back',
+    'dashboard.loginToAccess': 'Login to access your dashboard',
+    'dashboard.emailAddress': 'Email Address',
+    'dashboard.password': 'Password',
+    'dashboard.rememberMe': 'Remember me',
+    'dashboard.forgotPassword': 'Forgot password?',
+    'dashboard.tryDemo': 'Try Demo',
+    'dashboard.noAccount': 'Don\'t have an account?',
+    'dashboard.signUp': 'Sign up',
+    'dashboard.personalProfile': 'Personal Profile',
+    'dashboard.editProfile': 'Edit Profile',
+    'dashboard.personalInformation': 'Personal Information',
+    'dashboard.fullName': 'Full Name',
+    'dashboard.age': 'Age',
+    'dashboard.gender': 'Gender',
+    'dashboard.location': 'Location',
+    'dashboard.additionalInformation': 'Additional Information',
+    'dashboard.category': 'Category',
+    'dashboard.annualIncome': 'Annual Income',
+    'dashboard.education': 'Education',
+    'dashboard.employmentStatus': 'Employment Status',
+    'dashboard.governmentId': 'Government ID',
+    'dashboard.recommendedSchemes': 'Recommended Schemes',
+    'dashboard.recommendedSchemesDescription': 'Based on your profile, here are some schemes you might be interested in',
+    'dashboard.exploreAllSchemes': 'Explore All Schemes',
+    'dashboard.yourApplications': 'Your Applications',
+    'dashboard.newApplication': 'New Application',
+    'dashboard.noApplicationsYet': 'No Applications Yet',
+    'dashboard.noApplicationsDescription': 'You haven\'t applied for any schemes yet. Start by checking your eligibility.',
+    'dashboard.savedSchemes': 'Saved Schemes',
+    'dashboard.browseMore': 'Browse More',
+    'dashboard.noSavedSchemes': 'No Saved Schemes',
+    'dashboard.noSavedSchemesDescription': 'You haven\'t saved any schemes yet. Explore schemes to save them for later.',
+    'dashboard.documentManagement': 'Document Management',
+    'dashboard.documentManagementDescription': 'Upload and manage your documents for scheme applications',
+    'dashboard.documentVerificationStatus': 'Document Verification Status',
+    'dashboard.documentVerificationDescription': 'Your documents are being verified. You will be notified once the verification is complete.',
+    'dashboard.profile': 'Profile',
+    'dashboard.applications': 'Applications',
+    'dashboard.documents': 'Documents'
+  },
     hi: {
       // Hindi translations
       'app.name': 'जन समर्थ',
@@ -206,6 +297,20 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'nav.saved': 'सहेजी गई योजनाएं',
       'nav.documents': 'दस्तावेज़',
       'nav.logout': 'लॉगआउट',
+      'admin.title': 'एडमिन',
+      // Admin Panel
+      'admin.panel.title': 'एडमिन पैनल',
+      'admin.panel.subtitle': 'सरकारी योजनाओं का प्रबंधन करें और प्रदर्शन की निगरानी करें',
+      'admin.loggedInAs': 'लॉग इन:',
+      'admin.stats.totalSchemes': 'कुल योजनाएं',
+      'admin.stats.recent': 'हाल के (7 दिन)',
+      'admin.stats.totalViews': 'कुल दृश्य',
+      'admin.stats.avgViews': 'औसत दृश्य',
+      'admin.search.placeholder': 'योजनाओं की खोज करें...',
+      'admin.addNew': 'नई योजना जोड़ें',
+      'admin.logout': 'लॉगआउट',
+      'admin.filter.allTypes': 'सभी प्रकार',
+      'admin.filter.allCategories': 'सभी श्रेणियाँ',
       
       // Landing Page
       'landing.hero.title': 'एक राष्ट्र, सभी सरकारी योजनाओं के लिए एक मंच',
@@ -377,51 +482,51 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
     ta: {
       // Tamil translations
       'app.name': 'ஜன் சமர்த்',
-      'app.description': 'அரசு திட்டங்களுக்கான தேசிய தளம்',
-      
+      'app.description': 'பிரபுத்வ பாதகங்களுக்கான தேசிய வேலைத்தளம்',
+
       // Navigation
       'nav.home': 'முகப்பு',
-      'nav.schemes': 'திட்டங்களை ஆராய்க',
+      'nav.schemes': 'பாதகங்களை ஆராய்க',
       'nav.eligibility': 'தகுதியை சரிபார்க்க',
       'nav.dashboard': 'டாஷ்போர்டு',
       'nav.login': 'உள்நுழைய',
       'nav.register': 'பதிவு செய்ய',
       'nav.profile': 'சுயவிவரம்',
       'nav.applications': 'விண்ணப்பங்கள்',
-      'nav.saved': 'சேமித்த திட்டங்கள்',
+      'nav.saved': 'சேமித்த பாதகங்கள்',
       'nav.documents': 'ஆவணங்கள்',
       'nav.logout': 'வெளியேறு',
-      
+
       // Landing Page
-      'landing.hero.title': 'ஒரே நாடு, அனைத்து அரசு திட்டங்களுக்கும் ஒரே தளம்',
-      'landing.hero.subtitle': 'ஒரே தளத்தின் மூலம் பல்வேறு அரசு திட்டங்களை அணுகி விண்ணப்பிக்கவும்',
-      'landing.search.placeholder': 'திட்டங்கள், பலன்கள் அல்லது வகைகளைத் தேடுங்கள்...',
-      'landing.featured.title': 'சிறப்பு திட்டங்கள்',
-      'landing.featured.subtitle': 'ஆதரவு மற்றும் நன்மைகளை வழங்க வடிவமைக்கப்பட்ட சமீபத்திய அரசு திட்டங்களைக் கண்டறியவும்',
-      'landing.viewAll': 'அனைத்து திட்டங்களையும் காண்க',
-      
+      'landing.hero.title': 'ஒரு தேசம், அனைத்து பிரபுத்வ பாதகங்களுக்கும் ஒரு வேலைத்தளம்',
+      'landing.hero.subtitle': 'ஒரு வேலைத்தளத்தின் மூலம் பல்வேறு பிரபுத்வ பாதகங்களை அணுகி விண்ணப்பிக்கவும்',
+      'landing.search.placeholder': 'பாதகங்கள், பலன்கள் அல்லது வகைகளைத் தேடுங்கள்...',
+      'landing.featured.title': 'சிறப்பு பாதகங்கள்',
+      'landing.featured.subtitle': 'ஆதரவு மற்றும் நன்மைகளை வழங்க வடிவமைக்கப்பட்ட சமீபத்திய பிரபுத்வ பாதகங்களைக் கண்டறியவும்',
+      'landing.viewAll': 'அனைத்து பாதகங்களையும் காண்க',
+
       // How It Works
       'landing.how.title': 'இது எப்படி செயல்படுகிறது',
-      'landing.how.subtitle': 'அரசு திட்டங்களைக் கண்டறிந்து விண்ணப்பிக்கும் செயல்முறையை எமது தளம் எளிதாக்குகிறது',
+      'landing.how.subtitle': 'மா வேலைத்தளம் பிரபுத்வ பாதகாலை கண்டறிந்து விண்ணப்பிக்கும் செயல்முறையை சரளீகரிஸ்துந்',
       'landing.how.step1.title': 'தேடல் & கண்டுபிடித்தல்',
       'landing.how.step1.description': 'பொருத்தமான வாய்ப்புகளைக் கண்டறிய திட்டங்களைத் தேடுங்கள் அல்லது வகைகளால் உலாவுங்கள்',
       'landing.how.step2.title': 'தகுதியை சரிபார்க்கவும்',
       'landing.how.step2.description': 'நீங்கள் எந்த திட்டங்களுக்கு தகுதி பெறுகிறீர்கள் என்பதை உடனடியாகப் பார்க்க உங்கள் சுயவிவரத்தை நிரப்பவும்',
       'landing.how.step3.title': 'விண்ணப்பித்து கண்காணிக்கவும்',
       'landing.how.step3.description': 'விண்ணப்பங்களை சமர்ப்பிக்கவும், ஆவணங்களை பதிவேற்றவும், உங்கள் விண்ணப்ப நிலையை கண்காணிக்கவும்',
-      
+
       // Benefits
-      'landing.benefits.title': 'எங்கள் போர்டலை ஏன் பயன்படுத்த வேண்டும்?',
-      'landing.benefits.item1': 'அனைத்து அரசு திட்டங்களும் ஒரே இடத்தில்',
+      'landing.benefits.title': 'மா போர்டலை ஏன் பயன்படுத்த வேண்டும்?',
+      'landing.benefits.item1': 'அனைத்து பிரபுத்வ பாதகாலும் ஒரே இடத்தில்',
       'landing.benefits.item2': 'தனிப்பயனாக்கப்பட்ட தகுதி சரிபார்ப்பு',
       'landing.benefits.item3': 'பரந்த அணுகலுக்கான பல மொழி ஆதரவு',
-      'landing.benefits.item4': 'எளிமையாக்கப்பட்ட விண்ணப்ப செயல்முறை',
-      'landing.benefits.item5': 'நேரடி விண்ணப்ப நிலை கண்காணிப்பு',
-      'landing.benefits.item6': 'பாதுகாப்பான ஆவண மேலாண்மை அமைப்பு',
+      'landing.benefits.item4': 'சரளீகரிஸ்த விண்ணப்ப செயல்முறை',
+      'landing.benefits.item5': 'ரீயல்-டைம்ம விண்ணப்ப நிலை கண்காணிப்பு',
+      'landing.benefits.item6': 'சுரக்ஷித ஆவண நிர்வாக அமைப்பு',
       'landing.benefits.cta': 'உங்கள் தகுதியை சரிபார்க்கவும்',
-      
+
       // Categories
-      'category.all': 'அனைத்து திட்டங்கள்',
+      'category.all': 'அனைத்து பாதகங்கள்',
       'category.students': 'மாணவர்கள்',
       'category.farmers': 'விவசாயிகள்',
       'category.women': 'பெண்கள்',
@@ -429,11 +534,11 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'category.health': 'சுகாதாரம்',
       'category.housing': 'வீட்டுவசதி',
       'category.financial': 'நிதி',
-      
+
       // Scheme Explorer
-      'explorer.title': 'அரசு திட்டங்களை ஆராயுங்கள்',
-      'explorer.subtitle': 'பல்வேறு அரசு திட்டங்களை உலாவி உங்கள் தேவைகளுக்கு ஏற்ற திட்டங்களைக் கண்டறியுங்கள்',
-      'explorer.search.placeholder': 'திட்டத்தின் பெயர், அமைச்சகம் அல்லது வகை மூலம் தேடுங்கள்...',
+      'explorer.title': 'பிரபுத்வ பாதகாலை ஆராயுங்கள்',
+      'explorer.subtitle': 'பல்வேறு பிரபுத்வ பாதகாலை உலாவி உங்கள் தேவைகளுக்கு ஏற்ற வாற்றினை கண்டறியுங்கள்',
+      'explorer.search.placeholder': 'பாதகம் பெயர், அமைச்சகம் அல்லது வகை மூலம் தேடுங்கள்...',
       'explorer.filters.title': 'வடிகட்டிகள்',
       'explorer.filters.ministry': 'அமைச்சகம்',
       'explorer.filters.gender': 'பாலினம்',
@@ -444,51 +549,51 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'explorer.sort.nameDesc': 'பெயர் (Z-A)',
       'explorer.sort.latest': 'சமீபத்தியது முதலில்',
       'explorer.sort.oldest': 'பழையது முதலில்',
-      'explorer.results.count': '{count} திட்டங்கள் கண்டுபிடிக்கப்பட்டன',
-      'explorer.results.empty': 'திட்டங்கள் எதுவும் கிடைக்கவில்லை',
+      'explorer.results.count': '{count} பாதகாலு கண்டுபிடிக்கப்பட்டன',
+      'explorer.results.empty': 'பாதகாலு எதுவும் கிடைக்கவில்லை',
       'explorer.filters.clear': 'வடிகட்டிகளை அழிக்கவும்',
       'explorer.view.grid': 'கட்ட காட்சி',
       'explorer.view.list': 'பட்டியல் காட்சி',
-      
+
       // Scheme Details
-      'scheme.details.title': 'திட்ட விவரங்கள்',
+      'scheme.details.title': 'பாதகம் விவரங்கள்',
       'scheme.details.ministry': 'அமைச்சகம்',
       'scheme.details.lastUpdated': 'கடைசியாக புதுப்பிக்கப்பட்டது',
-      'scheme.details.about': 'இந்த திட்டத்தைப் பற்றி',
+      'scheme.details.about': 'இந்த பாதகம் பற்றி',
       'scheme.details.benefits': 'பலன்கள்',
       'scheme.details.process': 'விண்ணப்ப செயல்முறை',
       'scheme.details.documents': 'தேவையான ஆவணங்கள்',
       'scheme.details.apply': 'விண்ணப்பிக்க தயாரா?',
       'scheme.details.applyButton': 'இப்போது விண்ணப்பிக்கவும்',
-      'scheme.details.save': 'திட்டத்தை சேமிக்கவும்',
+      'scheme.details.save': 'பாதகத்தை சேமிக்கவும்',
       'scheme.details.saved': 'சேமிக்கப்பட்டது',
-      'scheme.details.share': 'திட்டத்தை பகிரவும்',
+      'scheme.details.share': 'பாதகத்தை பகிரவும்',
       'scheme.details.download': 'PDF பதிவிறக்கம்',
       'scheme.details.eligibility.title': 'உங்கள் தகுதி',
       'scheme.details.eligibility.eligible': 'நீங்கள் தகுதியானவர்!',
       'scheme.details.eligibility.notEligible': 'தகுதியற்றவர்',
       'scheme.details.eligibility.check': 'தகுதியை சரிபார்க்கவும்',
-      
+
       // Eligibility Form
       'eligibility.title': 'உங்கள் தகுதியை சரிபார்க்கவும்',
-      'eligibility.subtitle': 'நீங்கள் தகுதியுள்ள அரசு திட்டங்களைக் கண்டறிய படிவத்தை நிரப்பவும்',
+      'eligibility.subtitle': 'நீங்கள் தகுதியுள்ள பிரபுத்வ பாதகாலை கண்டறிய படிவத்தை நிரப்பவும்',
       'eligibility.step1': 'தனிப்பட்ட தகவல்',
       'eligibility.step2': 'மக்கள்தொகை',
       'eligibility.step3': 'வேலைவாய்ப்பு',
-      'eligibility.step4': 'அரசு அடையாளம்',
+      'eligibility.step4': 'பிரபுத்வ ID',
       'eligibility.step5': 'முடிவுகள்',
-      
+
       'eligibility.personal.title': 'தனிப்பட்ட தகவல்',
       'eligibility.personal.description': 'உங்கள் அடிப்படை தனிப்பட்ட விவரங்களை வழங்கவும்',
       'eligibility.demographics.title': 'மக்கள்தொகை',
       'eligibility.demographics.description': 'உங்கள் சமூக மற்றும் பொருளாதார பின்னணி பற்றிய தகவல்',
       'eligibility.employment.title': 'வேலைவாய்ப்பு நிலை',
       'eligibility.employment.description': 'உங்கள் தற்போதைய வேலைவாய்ப்பு நிலை பற்றிய விவரங்கள்',
-      'eligibility.government.title': 'அரசு அடையாளம்',
-      'eligibility.government.description': 'அரசு வழங்கிய அடையாள அட்டை மூலம் சரிபார்ப்பு',
+      'eligibility.government.title': 'பிரபுத்வ ID',
+      'eligibility.government.description': 'பிரபுத்வ வழங்கிய அடையாள அட்டை மூலம் சரிபார்ப்பு',
       'eligibility.results.title': 'உங்கள் தகுதி முடிவுகள்',
-      'eligibility.results.description': 'உங்கள் சுயவிவரத்தின் அடிப்படையில், நீங்கள் தகுதிபெறக்கூடிய பின்வரும் திட்டங்களைக் கண்டறிந்துள்ளோம்',
-      
+      'eligibility.results.description': 'உங்கள் சுயவிவரத்தின் அடிப்படையில், மேமு உங்கள் தகுதிபெறக்கூடிய கீழ் பாதகாலை கண்டறிந்துள்ளோம்',
+
       // Form Fields
       'form.name': 'முழு பெயர்',
       'form.age': 'வயது',
@@ -518,17 +623,17 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'form.aadhaar': 'ஆதார் எண்',
       'form.required': 'தேவையானது',
       'form.optional': 'விருப்பத்தேர்வு',
-      'form.next': 'அடுத்து',
+      'form.next': 'தருவாத',
       'form.previous': 'முந்தைய',
       'form.submit': 'சமர்ப்பிக்கவும்',
-      
+
       // Form Validation
       'validation.required': 'இந்த புலம் தேவை',
       'validation.age.min': 'வயது குறைந்தபட்சம் {min} ஆண்டுகள் இருக்க வேண்டும்',
       'validation.age.max': 'வயது {max} ஆண்டுகளை தாண்டக்கூடாது',
       'validation.income.min': 'வருமானம் எதிர்மறையாக இருக்க முடியாது',
       'validation.aadhaar.format': 'சரியான ஆதார் எண்ணை உள்ளிடவும் (XXXX-XXXX-XXXX)',
-      
+
       // Status Messages
       'status.loading': 'ஏற்றுகிறது...',
       'status.error': 'பிழை ஏற்பட்டது',
@@ -536,8 +641,8 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'status.saved': 'வெற்றிகரமாக சேமிக்கப்பட்டது',
       'status.submitted': 'வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது',
       'status.processing': 'உங்கள் கோரிக்கை செயலாக்கப்படுகிறது...',
-      'status.complete': 'செயல்முறை முடிந்தது',
-      
+      'status.complete': 'பிரக்ரிய பூர்த்தైందி',
+
       // Document Upload
       'document.upload.title': 'ஆவணங்களை பதிவேற்றவும்',
       'document.upload.drag': 'இழுத்து விடவும் அல்லது பதிவேற்ற கிளிக் செய்யவும்',
@@ -547,7 +652,7 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'document.status.verified': 'சரிபார்க்கப்பட்டது',
       'document.status.pending': 'சரிபார்ப்பு நிலுவையில் உள்ளது',
       'document.status.rejected': 'சரிபார்ப்பு தோல்வியடைந்தது',
-      
+
       // Application Status
       'application.status.draft': 'வரைவு',
       'application.status.submitted': 'சமர்ப்பிக்கப்பட்டது',
@@ -557,7 +662,49 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'application.action.continue': 'விண்ணப்பத்தை தொடரவும்',
       'application.action.track': 'நிலையை கண்காணிக்கவும்',
       'application.action.view': 'விவரங்களைக் காண',
-      'application.action.benefits': 'பலன்களைக் காண'
+      'application.action.benefits': 'பலன்களைக் காண',
+      // Dashboard
+      'dashboard': 'டாஷ்போர்டு',
+      'dashboard.welcomeBack': 'மீண்டும் வருக',
+      'dashboard.loginToAccess': 'உங்கள் டாஷ்போர்டை அணுக உள்நுழையவும்',
+      'dashboard.emailAddress': 'மின்னஞ்சல் முகவரி',
+      'dashboard.password': 'கடவுச்சொல்',
+      'dashboard.rememberMe': 'என்னை நினைவில் வைத்துக்கொள்',
+      'dashboard.forgotPassword': 'கடவுச்சொல் மறந்துவிட்டதா?',
+      'dashboard.tryDemo': 'டெமோவை முயற்சிக்கவும்',
+      'dashboard.noAccount': 'கணக்கு இல்லையா?',
+      'dashboard.signUp': 'பதிவு செய்யவும்',
+      'dashboard.personalProfile': 'தனிப்பட்ட சுயவிவரம்',
+      'dashboard.editProfile': 'சுயவிவரத்தை திருத்தவும்',
+      'dashboard.personalInformation': 'தனிப்பட்ட தகவல்',
+      'dashboard.fullName': 'முழு பெயர்',
+      'dashboard.age': 'வயது',
+      'dashboard.gender': 'பாலினம்',
+      'dashboard.location': 'இடம்',
+      'dashboard.additionalInformation': 'கூடுதல் தகவல்',
+      'dashboard.category': 'வகை',
+      'dashboard.annualIncome': 'ஆண்டு வருமானம்',
+      'dashboard.education': 'கல்வி',
+      'dashboard.employmentStatus': 'வேலை நிலை',
+      'dashboard.governmentId': 'அரசு அடையாளம்',
+      'dashboard.recommendedSchemes': 'பரிந்துரைக்கப்பட்ட திட்டங்கள்',
+      'dashboard.recommendedSchemesDescription': 'உங்கள் சுயவிவரத்தின் அடிப்படையில், இங்கே சில திட்டங்கள் உள்ளன, அவை உங்களுக்கு ஆர்வமாக இருக்கலாம்',
+      'dashboard.exploreAllSchemes': 'அனைத்து திட்டங்களையும் ஆராயுங்கள்',
+      'dashboard.yourApplications': 'உங்கள் விண்ணப்பங்கள்',
+      'dashboard.newApplication': 'புதிய விண்ணப்பம்',
+      'dashboard.noApplicationsYet': 'இன்னும் விண்ணப்பங்கள் இல்லை',
+      'dashboard.noApplicationsDescription': 'நீங்கள் இன்னும் எந்த திட்டங்களுக்கும் விண்ணப்பிக்கவில்லை. உங்கள் தகுதியை சரிபார்த்து தொடங்குங்கள்.',
+      'dashboard.savedSchemes': 'சேமித்த திட்டங்கள்',
+      'dashboard.browseMore': 'மேலும் உலாவு',
+      'dashboard.noSavedSchemes': 'சேமித்த திட்டங்கள் இல்லை',
+      'dashboard.noSavedSchemesDescription': 'நீங்கள் இன்னும் எந்த திட்டங்களையும் சேமிக்கவில்லை. பின்னர் சேமிக்க திட்டங்களை ஆராயுங்கள்.',
+      'dashboard.documentManagement': 'ஆவண நிர்வாகம்',
+      'dashboard.documentManagementDescription': 'திட்ட விண்ணப்பங்களுக்கு உங்கள் ஆவணங்களை பதிவேற்றி நிர்வகிக்கவும்',
+      'dashboard.documentVerificationStatus': 'ஆவண சரிபார்ப்பு நிலை',
+      'dashboard.documentVerificationDescription': 'உங்கள் ஆவணங்கள் சரிபார்க்கப்படுகின்றன. சரிபார்ப்பு முடிந்ததும் உங்களுக்கு அறிவிக்கப்படும்.',
+      'dashboard.profile': 'சுயவிவரம்',
+      'dashboard.applications': 'விண்ணப்பங்கள்',
+      'dashboard.documents': 'ஆவணங்கள்'
     },
     bn: {
       // Bengali translations
@@ -742,7 +889,49 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'application.action.continue': 'আবেদন চালিয়ে যান',
       'application.action.track': 'স্থিতি ট্র্যাক করুন',
       'application.action.view': 'বিবরণ দেখুন',
-      'application.action.benefits': 'সুবিধা দেখুন'
+      'application.action.benefits': 'সুবিধা দেখুন',
+      // Dashboard
+      'dashboard': 'ড্যাশবোর্ড',
+      'dashboard.welcomeBack': 'স্বাগতম ফিরে',
+      'dashboard.loginToAccess': 'আপনার ড্যাশবোর্ড অ্যাক্সেস করতে লগইন করুন',
+      'dashboard.emailAddress': 'ইমেল ঠিকানা',
+      'dashboard.password': 'পাসওয়ার্ড',
+      'dashboard.rememberMe': 'আমাকে মনে রাখুন',
+      'dashboard.forgotPassword': 'পাসওয়ার্ড ভুলে গেছেন?',
+      'dashboard.tryDemo': 'ডেমো চেষ্টা করুন',
+      'dashboard.noAccount': 'অ্যাকাউন্ট নেই?',
+      'dashboard.signUp': 'সাইন আপ করুন',
+      'dashboard.personalProfile': 'ব্যক্তিগত প্রোফাইল',
+      'dashboard.editProfile': 'প্রোফাইল সম্পাদনা করুন',
+      'dashboard.personalInformation': 'ব্যক্তিগত তথ্য',
+      'dashboard.fullName': 'পূর্ণ নাম',
+      'dashboard.age': 'বয়স',
+      'dashboard.gender': 'লিঙ্গ',
+      'dashboard.location': 'অবস্থান',
+      'dashboard.additionalInformation': 'অতিরিক্ত তথ্য',
+      'dashboard.category': 'বিভাগ',
+      'dashboard.annualIncome': 'বার্ষিক আয়',
+      'dashboard.education': 'শিক্ষা',
+      'dashboard.employmentStatus': 'কর্মসংস্থানের স্থিতি',
+      'dashboard.governmentId': 'সরকারি পরিচয়',
+      'dashboard.recommendedSchemes': 'প্রস্তাবিত প্রকল্প',
+      'dashboard.recommendedSchemesDescription': 'আপনার প্রোফাইলের ভিত্তিতে, এখানে কিছু প্রকল্প রয়েছে যা আপনি আগ্রহী হতে পারেন',
+      'dashboard.exploreAllSchemes': 'সমস্ত প্রকল্প অন্বেষণ করুন',
+      'dashboard.yourApplications': 'আপনার আবেদনপত্র',
+      'dashboard.newApplication': 'নতুন আবেদন',
+      'dashboard.noApplicationsYet': 'এখনও কোন আবেদন নেই',
+      'dashboard.noApplicationsDescription': 'আপনি এখনও কোন প্রকল্পের জন্য আবেদন করেননি। আপনার যোগ্যতা পরীক্ষা করে শুরু করুন।',
+      'dashboard.savedSchemes': 'সংরক্ষিত প্রকল্প',
+      'dashboard.browseMore': 'আরও ব্রাউজ করুন',
+      'dashboard.noSavedSchemes': 'কোন সংরক্ষিত প্রকল্প নেই',
+      'dashboard.noSavedSchemesDescription': 'আপনি এখনও কোন প্রকল্প সংরক্ষণ করেননি। পরে সংরক্ষণ করতে প্রকল্প অন্বেষণ করুন।',
+      'dashboard.documentManagement': 'নথি ব্যবস্থাপনা',
+      'dashboard.documentManagementDescription': 'প্রকল্প আবেদনের জন্য আপনার নথি আপলোড এবং পরিচালনা করুন',
+      'dashboard.documentVerificationStatus': 'নথি যাচাইকরণের স্থিতি',
+      'dashboard.documentVerificationDescription': 'আপনার নথি যাচাই করা হচ্ছে। যাচাইকরণ সম্পন্ন হলে আপনাকে অবহিত করা হবে।',
+      'dashboard.profile': 'প্রোফাইল',
+      'dashboard.applications': 'আবেদনপত্র',
+      'dashboard.documents': 'নথিপত্র'
     },
     mr: {
       // Marathi translations
@@ -928,8 +1117,193 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'application.action.track': 'स्थिती ट्रॅक करा',
       'application.action.view': 'तपशील पहा',
       'application.action.benefits': 'फायदे पहा'
+    },
+    te: {
+      // Telugu translations
+      'app.name': 'జన సమర్థ్',
+      'app.description': 'ప్రభుత్వ పథకాల కోసం జాతీయ వేదిక',
+
+      // Navigation
+      'nav.home': 'హోమ్',
+      'nav.schemes': 'పథకాలను అన్వేషించండి',
+      'nav.eligibility': 'అర్హతను తనిఖీ చేయండి',
+      'nav.dashboard': 'డ్యాష్బోర్డ్',
+      'nav.login': 'లాగిన్',
+      'nav.register': 'రిజిస్టర్',
+      'nav.profile': 'ప్రొఫైల్',
+      'nav.applications': 'అప్లికేషన్లు',
+      'nav.saved': 'సేవ్ చేసిన పథకాలు',
+      'nav.documents': 'పత్రాలు',
+      'nav.logout': 'లాగౌట్',
+
+      // Landing Page
+      'landing.hero.title': 'ఒక దేశం, అన్ని ప్రభుత్వ పథకాల కోసం ఒక వేదిక',
+      'landing.hero.subtitle': 'ఒకే వేదిక ద్వారా వివిధ ప్రభుత్వ పథకాలను యాక్సెస్ చేసి దరఖాస్తు చేయండి',
+      'landing.search.placeholder': 'పథకాలు, ప్రయోజనాలు లేదా వర్గాలను వెతకండి...',
+      'landing.featured.title': 'విశేష పథకాలు',
+      'landing.featured.subtitle': 'సహాయం మరియు ప్రయోజనాలను అందించే ఇటీవలి ప్రభుత్వ పథకాలను కనుగొనండి',
+      'landing.viewAll': 'అన్ని పథకాలను చూడండి',
+
+      // How It Works
+      'landing.how.title': 'ఇది ఎలా పని చేస్తుంది',
+      'landing.how.subtitle': 'మా వేదిక ప్రభుత్వ పథకాలను కనుగొనడం మరియు దరఖాస్తు చేయడం వల్ల ప్రక్రియను సరళీకరిస్తుంది',
+      'landing.how.step1.title': 'వెతకండి మరియు కనుగొనండి',
+      'landing.how.step1.description': 'సంబంధిత అవకాశాలను కనుగొనడానికి పథకాలను వెతకండి లేదా వర్గాల ద్వారా బ్రౌజ్ చేయండి',
+      'landing.how.step2.title': 'అర్హతను తనిఖీ చేయండి',
+      'landing.how.step2.description': 'మీరు ఏ పథకాలకు అర్హులో ఉన్నారో తెలుసుకోవడానికి మీ ప్రొఫైల్‌ను నింపండి',
+      'landing.how.step3.title': 'దరఖాస్తు చేసి ట్రాక్ చేయండి',
+      'landing.how.step3.description': 'దరఖాస్తులను సమర్పించండి, పత్రాలను అప్‌లోడ్ చేయండి మరియు మీ దరఖాస్తు స్థితిని ట్రాక్ చేయండి',
+
+      // Benefits
+      'landing.benefits.title': 'మా పోర్టల్‌ను ఎందుకు ఉపయోగించాలి?',
+      'landing.benefits.item1': 'అన్ని ప్రభుత్వ పథకాలు ఒకే చోట',
+      'landing.benefits.item2': 'వ్యక్తిగత అర్హత తనిఖీ',
+      'landing.benefits.item3': 'విస్తృత ప్రాప్యత కోసం బహు-భాషా మద్దతు',
+      'landing.benefits.item4': 'సరళీకృత దరఖాస్తు ప్రక్రియ',
+      'landing.benefits.item5': 'రీయల్-టైమ్ దరఖాస్తు స్థితి ట్రాకింగ్',
+      'landing.benefits.item6': 'సురక్షిత పత్ర నిర్వహణ వ్యవస్థ',
+      'landing.benefits.cta': 'మీ అర్హతను తనిఖీ చేయండి',
+
+      // Categories
+      'category.all': 'అన్ని పథకాలు',
+      'category.students': 'విద్యార్థులు',
+      'category.farmers': 'వ్యవసాయకులు',
+      'category.women': 'మహిళలు',
+      'category.seniors': 'వృద్ధులు',
+      'category.health': 'ఆరోగ్యం',
+      'category.housing': 'గృహనిర్మాణం',
+      'category.financial': 'ఆర్థిక',
+
+      // Scheme Explorer
+      'explorer.title': 'ప్రభుత్వ పథకాలను అన్వేషించండి',
+      'explorer.subtitle': 'వివిధ ప్రభుత్వ పథకాలను బ్రౌజ్ చేసి మీ అవసరాలకు సరిపోలే వాటిని కనుగొనండి',
+      'explorer.search.placeholder': 'పథకం పేరు, మంత్రిత్వ శాఖ లేదా వర్గం ద్వారా వెతకండి...',
+      'explorer.filters.title': 'ఫిల్టర్లు',
+      'explorer.filters.ministry': 'మంత్రిత్వ శాఖ',
+      'explorer.filters.gender': 'లింగం',
+      'explorer.filters.minIncome': 'కనీస ఆదాయం',
+      'explorer.filters.maxIncome': 'గరిష్ట ఆదాయం',
+      'explorer.sort.title': 'క్రమం చేయండి',
+      'explorer.sort.nameAsc': 'పేరు (A-Z)',
+      'explorer.sort.nameDesc': 'పేరు (Z-A)',
+      'explorer.sort.latest': 'సమీపంగా మొదటి',
+      'explorer.sort.oldest': 'పాతది మొదటి',
+      'explorer.results.count': '{count} పథకాలు కనుగొనబడ్డాయి',
+      'explorer.results.empty': 'పథకాలు ఏవీ కనుగొనబడలేదు',
+      'explorer.filters.clear': 'ఫిల్టర్లను క్లియర్ చేయండి',
+      'explorer.view.grid': 'గ్రిడ్ వ్యూ',
+      'explorer.view.list': 'లిస్ట్ వ్యూ',
+
+      // Scheme Details
+      'scheme.details.title': 'పథకం వివరాలు',
+      'scheme.details.ministry': 'మంత్రిత్వ శాఖ',
+      'scheme.details.lastUpdated': 'చివరిసారి అప్‌డేట్ చేయబడింది',
+      'scheme.details.about': 'ఈ పథకం గురించి',
+      'scheme.details.benefits': 'ప్రయోజనాలు',
+      'scheme.details.process': 'దరఖాస్తు ప్రక్రియ',
+      'scheme.details.documents': 'అవసరమైన పత్రాలు',
+      'scheme.details.apply': 'దరఖాస్తు చేయడానికి సిద్ధంగా ఉన్నారా?',
+      'scheme.details.applyButton': 'ఇప్పుడు దరఖాస్తు చేయండి',
+      'scheme.details.save': 'పథకాన్ని సేవ్ చేయండి',
+      'scheme.details.saved': 'సేవ్ చేయబడింది',
+      'scheme.details.share': 'పథకాన్ని షేర్ చేయండి',
+      'scheme.details.download': 'PDF డౌన్‌లోడ్ చేయండి',
+      'scheme.details.eligibility.title': 'మీ అర్హత',
+      'scheme.details.eligibility.eligible': 'మీరు అర్హులు!',
+      'scheme.details.eligibility.notEligible': 'అర్హులు కారు',
+      'scheme.details.eligibility.check': 'అర్హతను తనిఖీ చేయండి',
+
+      // Eligibility Form
+      'eligibility.title': 'మీ అర్హతను తనిఖీ చేయండి',
+      'eligibility.subtitle': 'మీరు ఏ ప్రభుత్వ పథకాలకు అర్హులో ఉన్నారో తెలుసుకోవడానికి ఫారమ్‌ను నింపండి',
+      'eligibility.step1': 'వ్యక్తిగత సమాచారం',
+      'eligibility.step2': 'జనసంఖ్యా శాస్త్రం',
+      'eligibility.step3': 'ఉద్యోగం',
+      'eligibility.step4': 'ప్రభుత్వ ID',
+      'eligibility.step5': 'ఫలితాలు',
+
+      'eligibility.personal.title': 'వ్యక్తిగత సమాచారం',
+      'eligibility.personal.description': 'దయచేసి మీ ప్రాథమిక వ్యక్తిగత వివరాలను అందించండి',
+      'eligibility.demographics.title': 'జనసంఖ్యా శాస్త్రం',
+      'eligibility.demographics.description': 'మీ సామాజిక మరియు ఆర్థిక నేపథ్యం గురించి సమాచారం',
+      'eligibility.employment.title': 'ఉద్యోగ స్థితి',
+      'eligibility.employment.description': 'మీ ప్రస్తుత ఉద్యోగ పరిస్థితి గురించి వివరాలు',
+      'eligibility.government.title': 'ప్రభుత్వ ID',
+      'eligibility.government.description': 'ప్రభుత్వ జారీ గుర్తింపు ద్వారా ధృవీకరణ',
+      'eligibility.results.title': 'మీ అర్హత ఫలితాలు',
+      'eligibility.results.description': 'మీ ప్రొఫైల్ ఆధారంగా, మేము మీరు అర్హులై ఉండే క్రింది పథకాలను కనుగొన్నాము',
+
+      // Form Fields
+      'form.name': 'పూర్తి పేరు',
+      'form.age': 'వయస్సు',
+      'form.gender': 'లింగం',
+      'form.gender.male': 'పురుషుడు',
+      'form.gender.female': 'స్త్రీ',
+      'form.gender.other': 'ఇతర',
+      'form.location': 'స్థానం',
+      'form.category': 'వర్గం',
+      'form.category.general': 'సాధారణ',
+      'form.category.sc': 'SC',
+      'form.category.st': 'ST',
+      'form.category.obc': 'OBC',
+      'form.category.ews': 'EWS',
+      'form.income': 'వార్షిక ఆదాయం',
+      'form.education': 'విద్య',
+      'form.education.below10': '10వ తరగతి కంటే తక్కువ',
+      'form.education.10th': '10వ పాస్',
+      'form.education.12th': '12వ పాస్',
+      'form.education.graduate': 'గ్రాడ్యుయేట్',
+      'form.education.postgraduate': 'పోస్ట్ గ్రాడ్యుయేట్',
+      'form.employment': 'ఉద్యోగ స్థితి',
+      'form.employment.employed': 'ఉద్యోగం',
+      'form.employment.selfEmployed': 'స్వయం ఉద్యోగం',
+      'form.employment.unemployed': 'నిరుద్యోగం',
+      'form.employment.student': 'విద్యార్థి',
+      'form.aadhaar': 'ఆధార్ సంఖ్య',
+      'form.required': 'అవసరం',
+      'form.optional': 'ఐచ్ఛికం',
+      'form.next': 'తరువాత',
+      'form.previous': 'మునుపటి',
+      'form.submit': 'సమర్పించండి',
+
+      // Form Validation
+      'validation.required': 'ఈ ఫీల్డ్ అవసరం',
+      'validation.age.min': 'వయస్సు కనీసం {min} సంవత్సరాలు ఉండాలి',
+      'validation.age.max': 'వయస్సు {max} సంవత్సరాలకు మించకూడదు',
+      'validation.income.min': 'ఆదాయం ప్రతికూలంగా ఉండకూడదు',
+      'validation.aadhaar.format': 'దయచేసి సరైన ఆధార్ ఫార్మాట్‌ను నమోదు చేయండి (XXXX-XXXX-XXXX)',
+
+      // Status Messages
+      'status.loading': 'లోడ్ అవుతోంది...',
+      'status.error': 'ఒక లోపం సంభవించింది',
+      'status.success': 'విజయం',
+      'status.saved': 'విజయవంతంగా సేవ్ చేయబడింది',
+      'status.submitted': 'విజయవంతంగా సమర్పించబడింది',
+      'status.processing': 'మీ అభ్యర్థనను ప్రాసెస్ చేస్తోంది...',
+      'status.complete': 'ప్రక్రియ పూర్తైంది',
+
+      // Document Upload
+      'document.upload.title': 'పత్రాలను అప్‌లోడ్ చేయండి',
+      'document.upload.drag': 'డ్రాగ్ చేసి డ్రాప్ చేయండి లేదా అప్‌లోడ్ చేయడానికి క్లిక్ చేయండి',
+      'document.upload.formats': 'మద్దతు ఉంది: PDF, JPEG, PNG (గరిష్టం: 5MB)',
+      'document.upload.success': 'ఫైల్ విజయవంతంగా అప్‌లోడ్ చేయబడింది',
+      'document.upload.error': 'ఫైల్ అప్‌లోడ్ చేయడంలో లోపం',
+      'document.status.verified': 'ధృవీకరించబడింది',
+      'document.status.pending': 'ధృవీకరణ పెండింగ్',
+      'document.status.rejected': 'ధృవీకరణ తిరస్కరించబడింది',
+
+      // Application Status
+      'application.status.draft': 'డ్రాఫ్ట్',
+      'application.status.submitted': 'సమర్పించబడింది',
+      'application.status.review': 'సమీక్షలో ఉంది',
+      'application.status.approved': 'ఆమోదించబడింది',
+      'application.status.rejected': 'తిరస్కరించబడింది',
+      'application.action.continue': 'దరఖాస్తును కొనసాగించండి',
+      'application.action.track': 'స్థితిని ట్రాక్ చేయండి',
+      'application.action.view': 'వివరాలను చూడండి',
+      'application.action.benefits': 'ప్రయోజనాలను చూడండి'
     }
   };
-  
+
   return translations[language] || translations.en;
 };

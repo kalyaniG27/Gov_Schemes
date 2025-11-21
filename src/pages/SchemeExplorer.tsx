@@ -8,10 +8,12 @@ import CategoryFilter from '../components/ui/CategoryFilter';
 import SchemeCard from '../components/ui/SchemeCard';
 import useSchemeStore from '../store/useSchemeStore';
 import { SchemeCategory } from '../types';
+import useLanguage from '../hooks/useLanguage';
 
 const SchemeExplorer: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { fetchSchemes, filterSchemes, sortSchemes, filteredSchemes } = useSchemeStore();
+  const { translate: t } = useLanguage();
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -98,7 +100,7 @@ const SchemeExplorer: React.FC = () => {
     setSearchQuery(query);
   };
 
-  const handleCategorySelect = (category: SchemeCategory | null) => {
+  const handleCategorySelect = (category: SchemeCategory | undefined) => {
     setSelectedCategory(category);
   };
 
@@ -201,7 +203,7 @@ const SchemeExplorer: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-3xl font-bold mb-6">Explore Government Schemes</h1>
+          <h1 className="text-3xl font-bold mb-6">{t('exploreSchemes')}</h1>
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-grow">
@@ -215,7 +217,7 @@ const SchemeExplorer: React.FC = () => {
               className="btn btn-outline flex items-center"
             >
               <Filter size={18} className="mr-2" />
-              Filters
+              {t('filters')}
             </button>
           </div>
 

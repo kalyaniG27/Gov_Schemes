@@ -1,6 +1,7 @@
 import React from 'react';
 import { SchemeCategory } from '../../types';
 import { GraduationCap, Tractor, Users, Heart, Home, Wallet } from 'lucide-react';
+import useLanguage from '../../hooks/useLanguage';
 
 interface CategoryFilterProps {
   selectedCategory: SchemeCategory | null;
@@ -14,15 +15,17 @@ interface CategoryOption {
 }
 
 const CategoryFilter: React.FC<CategoryFilterProps> = ({ selectedCategory, onSelectCategory }) => {
+  const { translate } = useLanguage();
+
   const categories: CategoryOption[] = [
-    { id: null, label: 'All Schemes', icon: <Users size={20} /> },
-    { id: 'students', label: 'Students', icon: <GraduationCap size={20} /> },
-    { id: 'farmers', label: 'Farmers', icon: <Tractor size={20} /> },
-    { id: 'women', label: 'Women', icon: <Users size={20} /> },
-    { id: 'senior-citizens', label: 'Senior Citizens', icon: <Users size={20} /> },
-    { id: 'health', label: 'Health', icon: <Heart size={20} /> },
-    { id: 'housing', label: 'Housing', icon: <Home size={20} /> },
-    { id: 'financial', label: 'Financial', icon: <Wallet size={20} /> },
+    { id: null, label: translate('category.all'), icon: <Users size={20} /> },
+    { id: 'students', label: translate('category.students'), icon: <GraduationCap size={20} /> },
+    { id: 'farmers', label: translate('category.farmers'), icon: <Tractor size={20} /> },
+    { id: 'women', label: translate('category.women'), icon: <Users size={20} /> },
+    { id: 'senior-citizens', label: translate('category.seniors'), icon: <Users size={20} /> },
+    { id: 'health', label: translate('category.health'), icon: <Heart size={20} /> },
+    { id: 'housing', label: translate('category.housing'), icon: <Home size={20} /> },
+    { id: 'financial', label: translate('category.financial'), icon: <Wallet size={20} /> },
   ];
 
   return (

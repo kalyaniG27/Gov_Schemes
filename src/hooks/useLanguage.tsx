@@ -11,11 +11,12 @@ type LanguageContextType = {
 };
 
 const defaultLanguages: LanguageOption[] = [
-  { code: 'en', name: 'English' },
-  { code: 'hi', name: 'Hindi' },
-  { code: 'ta', name: 'Tamil' },
-  { code: 'bn', name: 'Bengali' },
-  { code: 'mr', name: 'Marathi' },
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
 ];
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);

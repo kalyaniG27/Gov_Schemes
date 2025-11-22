@@ -6,10 +6,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Proxy API requests to the Express server
-      '/voice': 'http://localhost:3000',
-      '/process-age': 'http://localhost:3000',
-      '/process-income': 'http://localhost:3000',
+      // Proxy to Node Express server running on port 5000
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/voice': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      }
     }
   }
 })

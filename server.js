@@ -1,5 +1,5 @@
 // server.js
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import bodyParser from "body-parser";
 import twilio from "twilio";
@@ -7,6 +7,12 @@ import cors from "cors";
 import puppeteer from "puppeteer";
 import * as cheerio from "cheerio";
 import OpenAI from "openai";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "../.env"), debug: true });
 
 const { VoiceResponse } = twilio.twiml;
 
@@ -55,6 +61,36 @@ const app = express();
 app.use(cors()); // Enable CORS for frontend requests
 app.use(bodyParser.json()); // Enable JSON body parsing
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// --- Caching and Scraping Schedule Setup ---
+
+let cachedSchemes = null;
+let lastScrapeTimestamp = 0;
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour TTL for cached data
+
+async function updateSchemeCache() {
+  try {
+    console.log("Starting background scrape to update cached schemes...");
+    const schemes = await scrapeGovernmentSchemes();
+    cachedSchemes = schemes;
+    lastScrapeTimestamp = Date.now();
+    console.log(
+      `Successfully updated cached schemes at ${new Date(
+        lastScrapeTimestamp
+      ).toISOString()} with ${schemes.length} schemes.`
+    );
+  } catch (error) {
+    console.error("Failed to update scheme cache:", error);
+  }
+}
+
+// Initial scrape cache load on server start
+updateSchemeCache();
+
+// Schedule periodic background scraping every 1 hour
+setInterval(() => {
+  updateSchemeCache();
+}, CACHE_TTL);
 
 // --- Click-to-Call Feature ---
 
@@ -647,6 +683,8 @@ const languagePrompts = {
     processing: "Processing your eligibility. Please wait.",
     noSchemes:
       "Sorry, no schemes match your criteria. You can call back later.",
+    resultsMessage: "You are eligible for {count} schemes: ",
+    andMoreSchemes: "And {count} more schemes. ",
     smsSent: "An SMS with scheme details has been sent to your number.",
     error: "Sorry, there was an error. Please try again.",
     goodbye: "Thank you for using our service. Goodbye.",
@@ -662,6 +700,8 @@ const languagePrompts = {
     processing: "आपकी पात्रता की जांच हो रही है। कृपया प्रतीक्षा करें।",
     noSchemes:
       "क्षमा करें, कोई योजना आपके मानदंडों से मेल नहीं खाती। आप बाद में कॉल कर सकते हैं।",
+    resultsMessage: "आप {count} योजनाओं के लिए पात्र हैं: ",
+    andMoreSchemes: "और {count} अन्य योजनाएं। ",
     smsSent: "योजना विवरण वाला एसएमएस आपके नंबर पर भेज दिया गया है।",
     error: "क्षमा करें, कोई त्रुटि हुई। कृपया पुनः प्रयास करें।",
     goodbye: "हमारी सेवा का उपयोग करने के लिए धन्यवाद। अलविदा।",
@@ -677,6 +717,8 @@ const languagePrompts = {
     processing: "आपल्या पात्रतेची तपासणी सुरू आहे. कृपया थांबा.",
     noSchemes:
       "क्षमस्व, कोणतीही योजना आपल्या निकषांशी जुळत नाही. आपण नंतर कॉल करू शकता.",
+    resultsMessage: "तुम्ही {count} योजनांसाठी पात्र आहात: ",
+    andMoreSchemes: "आणि आणखी {count} योजना आहेत. ",
     smsSent: "योजना तपशील असलेला एसएमएस आपल्या नंबरवर पाठविला गेला आहे.",
     error: "क्षमस्व, त्रुटी झाली. कृपया पुन्हा प्रयत्न करा.",
     goodbye: "आमच्या सेवेचा वापर केल्याबद्दल धन्यवाद. अलविदा.",
@@ -694,9 +736,7 @@ app.post("/voice", (req, res) => {
     numDigits: 1,
   });
 
-  gather.say(
-    "Welcome to Government Scheme Eligibility Service. Press 1 for English, 2 for Hindi, 3 for Marathi."
-  );
+  gather.say(languagePrompts.marathi.welcome);
 
   res.type("text/xml");
   res.send(twiml.toString());
@@ -943,7 +983,7 @@ app.post("/voice/parse-data", async (req, res) => {
 
   try {
     // Check eligibility
-    const eligibleSchemes = eligibilityChecker(session.data, mockSchemes);
+    const eligibleSchemes = eligibilityChecker(session.data, cachedSchemes || mockSchemes);
     session.eligibleSchemes = eligibleSchemes;
 
     if (eligibleSchemes.length > 0) {
@@ -975,18 +1015,19 @@ app.post("/voice/result", (req, res) => {
   const eligibleSchemes = session.eligibleSchemes || [];
 
   if (eligibleSchemes.length > 0) {
-    let message = `You are eligible for ${eligibleSchemes.length} schemes: `;
+    const prompts = languagePrompts[session.language];
+    let message = prompts.resultsMessage.replace("{count}", eligibleSchemes.length);
 
     eligibleSchemes.slice(0, 3).forEach((scheme, index) => {
       message += `${index + 1}. ${scheme.title}. `;
     });
 
     if (eligibleSchemes.length > 3) {
-      message += `And ${eligibleSchemes.length - 3} more schemes. `;
+      message += prompts.andMoreSchemes.replace("{count}", eligibleSchemes.length - 3);
     }
 
     twiml.say(message);
-    twiml.say(languagePrompts[session.language].smsSent);
+    twiml.say(prompts.smsSent);
   }
 
   twiml.say(languagePrompts[session.language].goodbye);
@@ -1074,15 +1115,17 @@ app.post("/process-scheme-request", (req, res) => {
 
 // --- New API endpoint for Click-to-Call ---
 app.post("/api/make-call", async (req, res) => {
-  console.log("Received request for /api/make-call");
-  try {
-    // This TwiML will be executed when your agent answers the phone.
-    const twiml = new VoiceResponse();
-    twiml.say("Connecting you to a user who needs assistance. Please wait.");
+      console.log("Received request for /api/make-call");
+      try {
+        const host = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+        const voiceUrl = `${host}/voice`;
+    console.log(`Attempting to call agent at: ${agentPhoneNumber}`);
+    console.log(`Using Twilio number: ${twilioPhoneNumber}`);
+    console.log(`Using TwiML URL: ${voiceUrl}`);
 
     // Initiate a call from your Twilio number to your agent's number
     const call = await client.calls.create({
-      twiml: twiml.toString(),
+      url: voiceUrl,
       to: agentPhoneNumber,
       from: twilioPhoneNumber,
     });
@@ -1093,12 +1136,56 @@ app.post("/api/make-call", async (req, res) => {
       .send({ message: "Call initiated successfully!", sid: call.sid });
   } catch (error) {
     console.error("Error initiating call:", error);
-    // Provide a more specific error message to the frontend if possible
-    const errorMessage =
-      error.message || "An unknown error occurred with the Twilio API.";
-    res
-      .status(500)
-      .send({ message: "Failed to initiate call.", error: errorMessage });
+    res.status(error.status || 500).send({
+      message: "Failed to initiate call. Please check server logs for details.",
+      error: {
+        message: error.message,
+        code: error.code,
+        moreInfo: error.moreInfo,
+      },
+    });
+  }
+});
+
+// --- NEW Outbound Call API: Call the USER directly from the website ---
+app.post("/api/user-call", async (req, res) => {
+  console.log("Received request for /api/user-call");
+  const { userPhone } = req.body;
+
+  if (!userPhone) {
+    return res.status(400).json({
+      success: false,
+      message: "userPhone is required in request body",
+    });
+  }
+
+  try {
+    const host = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    const voiceUrl = `${host}/voice`;
+
+    console.log(`Attempting to call user at: ${userPhone}`);
+    console.log(`Using Twilio number: ${twilioPhoneNumber}`);
+    console.log(`Using TwiML URL: ${voiceUrl}`);
+
+    const call = await client.calls.create({
+      url: voiceUrl, // Use the dynamically generated URL
+      to: userPhone, // User's phone who clicked CALL button
+      from: twilioPhoneNumber,
+    });
+
+    console.log(`User call initiated successfully: SID: ${call.sid}`);
+    res.status(200).json({ success: true, sid: call.sid });
+  } catch (error) {
+    console.error("Error initiating user call:", error);
+    res.status(error.status || 500).json({
+      success: false,
+      message: "Call Failed to initialize. Please check server logs for details.",
+      error: {
+        message: error.message,
+        code: error.code,
+        moreInfo: error.moreInfo,
+      },
+    });
   }
 });
 
@@ -2052,14 +2139,27 @@ async function scrapeGovernmentSchemes() {
 // API endpoint to get scraped schemes
 app.get("/api/scrape-schemes", async (req, res) => {
   try {
-    console.log("Starting web scraping for government schemes...");
+    // Check cache and timestamp
+    if (cachedSchemes && Date.now() - lastScrapeTimestamp < CACHE_TTL) {
+      console.log("Returning cached schemes data");
+      return res.status(200).json({
+        success: true,
+        data: cachedSchemes,
+        count: cachedSchemes.length,
+        cached: true,
+      });
+    }
+    // Cache expired, scrape fresh schemes
+    console.log("Cache expired or empty, scraping fresh schemes...");
     const schemes = await scrapeGovernmentSchemes();
-    console.log(`Scraped ${schemes.length} schemes`);
+    cachedSchemes = schemes;
+    lastScrapeTimestamp = Date.now();
 
     res.status(200).json({
       success: true,
       data: schemes,
       count: schemes.length,
+      cached: false,
     });
   } catch (error) {
     console.error("Error in scrape-schemes endpoint:", error);
@@ -2081,3 +2181,21 @@ const PORT = process.env.PORT || 3001; // Use a different port from the React ap
 app.listen(PORT, () =>
   console.log(`Server with Voice API running on http://localhost:${PORT}`)
 );
+
+// --- Admin endpoint to force refresh cache ---
+app.post("/api/refresh-scrape-cache", async (req, res) => {
+  const adminApiKey = req.headers["x-admin-api-key"];
+  if (adminApiKey !== process.env.ADMIN_API_KEY) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized: Invalid or missing admin API key.",
+    });
+  }
+
+  try {
+    await updateSchemeCache();
+    res.status(200).json({ success: true, message: "Scheme cache refreshed" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});

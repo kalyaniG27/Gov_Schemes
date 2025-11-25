@@ -10,10 +10,11 @@ import RecentSchemes from '../components/ui/RecentSchemes';
 import useSchemeStore from '../store/useSchemeStore';
 import { SchemeCategory } from '../types';
 import useLanguage from '../hooks/useLanguage';
+import VoiceCallButton from '../components/VoiceCallButton';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { fetchSchemes, schemes } = useSchemeStore();
+  const { fetchSchemes, schemes, loading, error } = useSchemeStore();
   const { translate, currentLanguage } = useLanguage();
   
   const [selectedCategory, setSelectedCategory] = useState<SchemeCategory | null>(null);
@@ -31,16 +32,16 @@ const LandingPage: React.FC = () => {
     }
   }, [schemes]);
   
-  const handleSearch = (query: string) => {
+  function handleSearch(query: string) {
     navigate(`/schemes?search=${encodeURIComponent(query)}`);
-  };
+  }
   
-  const handleCategorySelect = (category: SchemeCategory | null) => {
+  function handleCategorySelect(category: SchemeCategory | null) {
     setSelectedCategory(category);
     if (category) {
       navigate(`/schemes?category=${category}`);
     }
-  };
+  }
   
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -82,7 +83,7 @@ const LandingPage: React.FC = () => {
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 drop-shadow-md">
                 {translate('landing.hero.title')}
               </h1>
-              <p className="text-lg md:text-xl opacity-90 mb-8 drop-shadow">
+              <p className="text-lg md:text-xl opacity-90 mb-8 drop-shadow text-black">
                 {translate('landing.hero.subtitle')}
               </p>
               
@@ -145,37 +146,73 @@ const LandingPage: React.FC = () => {
             </p>
           </motion.div>
           
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {featuredSchemes.map(scheme => (
+          {loading ? (
+            <div className="flex justify-center items-center py-12 text-lg font-medium text-gray-700">
+              Loading schemes...
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center py-12 text-lg font-medium text-red-600">
+              Error loading schemes: {error}
+            </div>
+          ) : (
+            <>
+          {loading ? (
+            <div className="flex justify-center items-center py-12 text-lg font-medium text-gray-700">
+              Loading schemes...
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center py-12 text-lg font-medium text-red-600">
+              Error loading schemes: {error}
+            </div>
+          ) : (
+            <>
+          {loading ? (
+            <div className="flex justify-center items-center py-12 text-lg font-medium text-gray-700">
+              Loading schemes...
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center py-12 text-lg font-medium text-red-600">
+              Error loading schemes: {error}
+            </div>
+          ) : (
+            <>
               <motion.div 
-                key={scheme.id} 
-                variants={itemVariants}
-                className="transform hover:scale-[1.02] transition-all duration-300"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
               >
-                <SchemeCard scheme={scheme} />
+                {featuredSchemes.map(scheme => (
+                  <motion.div 
+                    key={scheme.id} 
+                    variants={itemVariants}
+                    className="transform hover:scale-[1.02] transition-all duration-300"
+                  >
+                    <SchemeCard scheme={scheme} />
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
-          
-          <motion.div 
-            className="text-center mt-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <button 
-              onClick={() => navigate('/schemes')}
-              className="btn btn-outline inline-flex items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-            >
-              {translate('landing.viewAll')}
-              <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
-            </button>
-          </motion.div>
+              
+              <motion.div 
+                className="text-center mt-12"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                <button 
+                  onClick={() => navigate('/schemes')}
+                  className="btn btn-outline inline-flex items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                >
+                  {translate('landing.viewAll')}
+                  <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
+                </button>
+              </motion.div>
+            </>
+          )}
+            </>
+          )}
+            </>
+          )}
         </div>
       </section>
 

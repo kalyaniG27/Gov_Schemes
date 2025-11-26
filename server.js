@@ -10,9 +10,17 @@ import OpenAI from "openai";
 import path from "path";
 import { fileURLToPath } from "url";
 
+console.log("Starting server...");
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../.env"), debug: true });
+
+console.log("Twilio Account SID:", process.env.TWILIO_ACCOUNT_SID);
+console.log("Twilio Auth Token:", process.env.TWILIO_AUTH_TOKEN ? "Loaded" : "Not Loaded");
+console.log("Twilio Phone Number:", process.env.TWILIO_PHONE_NUMBER);
+console.log("Agent Phone Number:", process.env.AGENT_PHONE_NUMBER);
+
 
 const { VoiceResponse } = twilio.twiml;
 
@@ -727,16 +735,27 @@ const languagePrompts = {
 
 // Initial voice greeting for eligibility check
 app.post("/voice", (req, res) => {
+  console.log("Incoming request to /voice:");
+  console.log("Request body:", req.body);
+
   const twiml = new VoiceResponse();
 
   const gather = twiml.gather({
-    input: "speech dtmf",
+    input: "dtmf", // Changed to DTMF for language selection
     action: "/voice/start",
     method: "POST",
     numDigits: 1,
+    timeout: 10,
   });
 
-  gather.say(languagePrompts.marathi.welcome);
+  // Generic welcome in English, followed by language options
+  gather.say("Welcome to the Government Scheme Information Service.");
+  gather.say("For English, press 1.");
+  gather.say("हिंदी के लिए, 2 दबाएं."); // For Hindi, press 2
+  gather.say("मराठी साठी, 3 दाबा."); // For Marathi, press 3
+
+  // If the user doesn't input anything, redirect back to the welcome message
+  twiml.redirect("/voice");
 
   res.type("text/xml");
   res.send(twiml.toString());
@@ -746,24 +765,35 @@ app.post("/voice", (req, res) => {
 app.post("/voice/start", (req, res) => {
   const twiml = new VoiceResponse();
   const callSid = req.body.CallSid;
-  const input = req.body.Digits || req.body.SpeechResult || "";
+  const input = req.body.Digits; // Use DTMF input
 
-  let language = "english";
-  if (input === "2") language = "hindi";
-  else if (input === "3") language = "marathi";
+  let language = "english"; // Default to English
+  let language_confirmation = "You have selected English."
+  if (input === "2") {
+    language = "hindi";
+    language_confirmation = "आपने हिंदी का चयन किया है।"
+  } else if (input === "3") {
+    language = "marathi";
+    language_confirmation = "तुम्ही मराठी निवडले आहे."
+  }
 
   // Initialize session
   const session = getUserSession(callSid);
   session.language = language;
-  session.step = "age";
+  session.step = "age"; // Start the eligibility check
 
   const gather = twiml.gather({
     input: "speech",
     action: "/voice/collect-age",
     method: "POST",
+    timeout: 15, // Give more time for speech
   });
-
+  
+  gather.say(language_confirmation);
   gather.say(languagePrompts[language].age);
+
+  // If no input, retry
+  twiml.redirect("/voice/start");
 
   res.type("text/xml");
   res.send(twiml.toString());
@@ -2177,10 +2207,12 @@ app.get("/", (req, res) => {
   res.send("Government Scheme Eligibility Service is running.");
 });
 
-const PORT = process.env.PORT || 3001; // Use a different port from the React app
-app.listen(PORT, () =>
-  console.log(`Server with Voice API running on http://localhost:${PORT}`)
-);
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  // Log the URL that should be used for the Twilio webhook
+  console.log(`Twilio webhook URL should be: http://<your-ngrok-url>/voice`);
+});
 
 // --- Admin endpoint to force refresh cache ---
 app.post("/api/refresh-scrape-cache", async (req, res) => {

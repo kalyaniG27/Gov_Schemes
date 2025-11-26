@@ -950,6 +950,7 @@ export const loadTranslations = async (language: Language): Promise<Record<strin
       'nav.saved': 'जतन केलेल्या योजना',
       'nav.documents': 'कागदपत्रे',
       'nav.logout': 'बाहेर पडा',
+      'admin.title': 'एडमिन',
       
       // Landing Page
       'landing.hero.title': 'एक राष्ट्र, सर्व सरकारी योजनांसाठी एक व्यासपीठ',
